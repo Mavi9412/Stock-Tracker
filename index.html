@@ -286,7 +286,11 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
         </div>
         <div class="field"><label>Current Stock</label><input type="number" id="fCurrent" placeholder="auto" min="0"></div>
         <div class="field"><label>New Stock (IN)</label><input type="number" id="fNew" placeholder="0" min="0"></div>
-        <div class="field"><label>Closing Stock</label><input type="number" id="fClosing" placeholder="End of day" min="0"></div>
+        <div class="field">
+          <label>Closing Stock</label>
+          <input type="number" id="fClosing" placeholder="End of day" min="0" oninput="updateUsedPreview()">
+          <small id="usedPreview" style="color:var(--gray-400); font-size:0.65rem; margin-top:2px; display:none;">Used: 0</small>
+        </div>
         <button class="btn-add" id="btnAdd" onclick="addEntry()">+ ADD</button>
       </div>
     </div>
@@ -313,7 +317,7 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
             <tr>
               <th>Date</th><th>Item Name</th><th>Unit</th>
               <th class="num">Current</th><th class="num">IN</th>
-              <th class="num">OUT</th><th class="num">Balance</th><th></th>
+              <th class="num">Used (OUT)</th><th class="num">Balance</th><th></th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -516,6 +520,7 @@ async function addEntry() {
   document.getElementById('fCurrent').value = '';
   document.getElementById('fNew').value = '';
   document.getElementById('fClosing').value = '';
+  document.getElementById('usedPreview').style.display = 'none';
   document.getElementById('fCurrent').placeholder = 'auto';
   document.getElementById('fItem').focus();
   
@@ -628,6 +633,32 @@ function updateChips() {
 function updateSuggestions() {
   document.getElementById('itemSuggestions').innerHTML =
     Object.keys(items).map(k=>`<option value="${items[k].name}">`).join('');
+}
+
+async function updateUsedPreview() {
+  const closing = document.getElementById('fClosing').value;
+  const newStk = parseFloat(document.getElementById('fNew').value) || 0;
+  const item = document.getElementById('fItem').value.trim();
+  let currentInput = document.getElementById('fCurrent').value;
+  
+  if (closing === '') {
+    document.getElementById('usedPreview').style.display = 'none';
+    return;
+  }
+
+  let current = 0;
+  if (currentInput === '') {
+    const prev = records.find(r => r.item.toLowerCase() === item.toLowerCase());
+    current = prev ? prev.balance : 0;
+  } else {
+    current = parseFloat(currentInput) || 0;
+  }
+
+  const used = (current + newStk) - parseFloat(closing);
+  const preview = document.getElementById('usedPreview');
+  preview.textContent = `Used: ${used}`;
+  preview.style.display = 'block';
+  preview.style.color = used < 0 ? 'var(--red)' : 'var(--green)';
 }
 
 function fillFromChip(name, unit) {
