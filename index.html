@@ -542,6 +542,11 @@ async function addEntry() {
   await fetchData();
 }
 
+window.editEntry = editEntry;
+window.deleteEntry = deleteEntry;
+window.cancelEdit = cancelEdit;
+window.clearAll = clearAll;
+
 async function deleteEntry(id) {
   if (!confirm('Kya aap yeh record delete karna chahte hain?')) return;
   
@@ -673,9 +678,9 @@ function renderTable() {
       <td class="num">${fmt(r.used)}</td>
       <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span class="unit-tag">${r.unit||''}</span></td>
       <td>
-        <div style="display:flex; gap:5px;">
-          <button class="del-btn" onclick="editEntry('${r.id}')" title="Edit">✏️</button>
-          <button class="del-btn" onclick="deleteEntry('${r.id}')" title="Delete">🗑</button>
+        <div style="display:flex; gap:8px;">
+          <button class="del-btn" onclick="window.editEntry('${r.id}')" title="Edit" style="cursor:pointer; padding:5px;">✏️</button>
+          <button class="del-btn" onclick="window.deleteEntry('${r.id}')" title="Delete" style="cursor:pointer; padding:5px;">🗑</button>
         </div>
       </td>
     </tr>`;
