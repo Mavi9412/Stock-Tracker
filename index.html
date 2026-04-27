@@ -89,7 +89,7 @@ main { max-width:1020px; margin:0 auto; padding:22px 16px 60px; }
 
 .form-card { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:18px; border:1px solid var(--gray-200); }
 .form-title { font-family:'Space Mono',monospace; font-size:0.73rem; font-weight:700; color:var(--navy); letter-spacing:1px; text-transform:uppercase; margin-bottom:13px; }
-.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; align-items:end; }
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; align-items: flex-start; }
 .field { display:flex; flex-direction:column; gap:4px; }
 label { font-size:0.69rem; font-weight:600; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.6px; }
 input,select { border:1.5px solid var(--gray-200); border-radius:8px; padding:9px 11px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--gray-800); background:var(--gray-50); outline:none; transition:all 0.2s; width:100%; }
@@ -97,6 +97,7 @@ input:focus,select:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(2
 select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
 .btn-add { background:var(--navy); color:white; border:none; border-radius:8px; padding:10px 16px; font-family:'Space Mono',monospace; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.15s; white-space:nowrap; align-self:end; width:100%; }
 .btn-add:hover { background:var(--navy-light); transform:translateY(-1px); }
+.btn-add { margin-top: 1.25rem; }
 
 .items-panel { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 18px; margin-bottom:18px; border:1px solid var(--gray-200); }
 .items-panel-title { font-family:'Space Mono',monospace; font-size:0.70rem; font-weight:700; color:var(--navy); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
@@ -289,9 +290,11 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
         <div class="field">
           <label>Closing Stock</label>
           <input type="number" id="fClosing" placeholder="End of day" min="0" oninput="updateUsedPreview()">
-          <small id="usedPreview" style="color:var(--gray-400); font-size:0.65rem; margin-top:2px; display:none;">Used: 0</small>
+          <div style="height:15px;"><small id="usedPreview" style="color:var(--gray-400); font-size:0.65rem; font-weight:700; display:none;">Used: 0</small></div>
         </div>
-        <button class="btn-add" id="btnAdd" onclick="addEntry()">+ ADD</button>
+        <div class="field">
+          <button class="btn-add" id="btnAdd" onclick="addEntry()" style="margin-top:20px;">+ ADD</button>
+        </div>
       </div>
     </div>
 
@@ -690,9 +693,15 @@ async function updateUsedPreview() {
 
   const used = (current + newStk) - parseFloat(closing);
   const preview = document.getElementById('usedPreview');
+  
+  if (isNaN(used)) {
+    preview.style.display = 'none';
+    return;
+  }
+
   preview.textContent = `Used: ${used}`;
   preview.style.display = 'block';
-  preview.style.color = used < 0 ? 'var(--red)' : 'var(--green)';
+  preview.style.color = used < 0 ? '#E74C3C' : '#27AE60';
 }
 
 function fillFromChip(name, unit) {
