@@ -304,9 +304,21 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
     <!-- Table -->
     <div class="table-card">
       <div class="table-header-bar">
-        <div class="table-title">📋 Daily Records</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input class="filter-input" type="text" id="filterInput" placeholder="🔍 Filter..." oninput="renderTable()">
+        <div class="table-title">📋 Records List</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;flex:1;justify-content:flex-end;">
+          <div class="field" style="min-width:120px;">
+            <select id="rangeFilter" onchange="toggleCustomDate(); renderTable();" style="padding:6px 10px; font-size:0.75rem;">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="custom">Specific Date</option>
+            </select>
+          </div>
+          <div id="customDateWrap" class="field" style="display:none; min-width:130px;">
+            <input type="date" id="customDateFilter" onchange="renderTable()" style="padding:5px 10px; font-size:0.75rem;">
+          </div>
+          <input class="filter-input" type="text" id="filterInput" placeholder="🔍 Item name..." oninput="renderTable()" style="padding:6px 10px; font-size:0.75rem; width:140px;">
           <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
           <button class="btn-sm danger" onclick="clearAll()">🗑 Clear</button>
         </div>
@@ -565,32 +577,54 @@ async function clearAll() {
 const DATE_COLORS = ['dc-0','dc-1','dc-2','dc-3','dc-4'];
 
 function renderTable() {
-  const filter = (document.getElementById('filterInput')?.value || '').toLowerCase();
+  const tbody = document.getElementById('tableBody');
+  const query = document.getElementById('filterInput').value.toLowerCase();
+  const range = document.getElementById('rangeFilter').value;
+  const customDate = document.getElementById('customDateFilter').value;
   
-  const filtered = records.filter(r =>
-    r.item.toLowerCase().includes(filter) ||
-    r.date.includes(filter) ||
-    formatDate(r.date).toLowerCase().includes(filter) ||
-    (r.unit||'').toLowerCase().includes(filter)
-  );
+  tbody.innerHTML = '';
+  
+  let filtered = records.filter(r => r.item.toLowerCase().includes(query));
+
+  // Date Filtering
+  if (range !== 'all') {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    filtered = filtered.filter(r => {
+      const rDate = new Date(r.date);
+      if (range === 'today') return r.date === todayStr;
+      if (range === 'custom') return r.date === customDate;
+      
+      if (range === 'week') {
+        const lastWeek = new Date();
+        lastWeek.setDate(now.getDate() - 7);
+        return rDate >= lastWeek;
+      }
+      if (range === 'month') {
+        const lastMonth = new Date();
+        lastMonth.setMonth(now.getMonth() - 1);
+        return rDate >= lastMonth;
+      }
+      return true;
+    });
+  }
+
+  if (filtered.length === 0) {
+    const empty = document.getElementById('emptyState');
+    if(empty) empty.style.display='block';
+    return; 
+  }
   
   const dateColorMap = {};
   let ci = 0;
-  // Use a copy to avoid mutating state during color mapping
   [...filtered].reverse().forEach(r => { 
     if(!(r.date in dateColorMap)) dateColorMap[r.date]=DATE_COLORS[ci++%5]; 
   });
   
-  const tbody = document.getElementById('tableBody');
   const empty = document.getElementById('emptyState');
+  if(empty) empty.style.display = 'none';
   
-  if (!filtered.length) { 
-    tbody.innerHTML=''; 
-    empty.style.display='block'; 
-    return; 
-  }
-  
-  empty.style.display = 'none';
   tbody.innerHTML = filtered.map(r => {
     const cls = dateColorMap[r.date] || '';
     const balColor = r.balance < 0 ? '#E74C3C' : '#1A3C5E';
@@ -664,9 +698,21 @@ async function updateUsedPreview() {
 function fillFromChip(name, unit) {
   document.getElementById('fItem').value = name;
   document.getElementById('fUnit').value = unit;
+  document.getElementById('fCurrent').value = '';
+  document.getElementById('fCurrent').placeholder = 'Fetching...';
+  
   const prev = records.find(r => r.item.toLowerCase() === name.toLowerCase());
-  if (prev) document.getElementById('fCurrent').placeholder = `Last: ${fmt(prev.balance)} (auto)`;
+  if (prev) {
+    document.getElementById('fCurrent').placeholder = prev.balance;
+  } else {
+    document.getElementById('fCurrent').placeholder = '0';
+  }
   document.getElementById('fNew').focus();
+}
+
+function toggleCustomDate() {
+  const range = document.getElementById('rangeFilter').value;
+  document.getElementById('customDateWrap').style.display = (range === 'custom') ? 'block' : 'none';
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
