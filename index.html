@@ -678,9 +678,9 @@ function renderTable() {
       <td class="num">${fmt(r.used)}</td>
       <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span class="unit-tag">${r.unit||''}</span></td>
       <td>
-        <div style="display:flex; gap:8px;">
-          <button class="del-btn" onclick="window.editEntry('${r.id}')" title="Edit" style="cursor:pointer; padding:5px;">✏️</button>
-          <button class="del-btn" onclick="window.deleteEntry('${r.id}')" title="Delete" style="cursor:pointer; padding:5px;">🗑</button>
+        <div style="display:flex; gap:10px;">
+          <button class="edit-btn" data-id="${r.id}" title="Edit" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">✏️</button>
+          <button class="del-btn" data-id="${r.id}" title="Delete" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -789,6 +789,19 @@ function exportCSV() {
 }
 
 // ── LISTENERS ────────────────────────────────────────────────────────────────
+document.getElementById('tableBody').addEventListener('click', e => {
+  const editBtn = e.target.closest('.edit-btn');
+  const delBtn = e.target.closest('.del-btn');
+  
+  if (editBtn) {
+    const id = editBtn.getAttribute('data-id');
+    editEntry(id);
+  } else if (delBtn) {
+    const id = delBtn.getAttribute('data-id');
+    deleteEntry(id);
+  }
+});
+
 document.getElementById('fItem').addEventListener('input', function() {
   const val = this.value.trim().toLowerCase();
   const match = items[val];
