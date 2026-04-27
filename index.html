@@ -679,8 +679,8 @@ function renderTable() {
       <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span class="unit-tag">${r.unit||''}</span></td>
       <td>
         <div style="display:flex; gap:10px;">
-          <button class="edit-btn" data-id="${r.id}" title="Edit" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">✏️</button>
-          <button class="del-btn" data-id="${r.id}" title="Delete" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">🗑</button>
+          <button class="edit-btn" data-id="${r.id}" style="cursor:pointer; background:#F39C12; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; font-weight:700;">EDIT</button>
+          <button class="del-btn" data-id="${r.id}" style="cursor:pointer; background:#E74C3C; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; font-weight:700;">DEL</button>
         </div>
       </td>
     </tr>`;
@@ -789,12 +789,13 @@ function exportCSV() {
 }
 
 // ── LISTENERS ────────────────────────────────────────────────────────────────
-document.getElementById('tableBody').addEventListener('click', e => {
+document.addEventListener('click', e => {
   const editBtn = e.target.closest('.edit-btn');
   const delBtn = e.target.closest('.del-btn');
   
   if (editBtn) {
     const id = editBtn.getAttribute('data-id');
+    console.log('Edit action triggered for:', id);
     editEntry(id);
   } else if (delBtn) {
     const id = delBtn.getAttribute('data-id');
