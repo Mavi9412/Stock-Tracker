@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stock Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1A3C5E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stock Tracker">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -136,6 +142,9 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
 .del-btn:hover { color:var(--red); background:#FFF0EE; }
 .edit-btn { background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:0.80rem; padding:2px 5px; border-radius:4px; transition:all 0.12s; }
 .edit-btn:hover { color:var(--navy); background:var(--blue-soft); }
+.suggestion-item { padding:10px 14px; font-size:0.88rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--gray-100); }
+.suggestion-item:last-child { border-bottom:none; }
+.suggestion-item:hover, .suggestion-item:active { background:var(--blue-soft); color:var(--navy); }
 .btn-cancel { background:transparent; border:1.5px solid var(--gray-400); color:var(--gray-600); border-radius:8px; padding:10px 14px; font-family:'Space Mono',monospace; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.15s; width:100%; margin-top:20px; }
 .btn-cancel:hover { border-color:var(--red); color:var(--red); }
 .form-card.editing { border-color:var(--accent); box-shadow:0 0 0 3px rgba(245,158,11,0.15); }
@@ -189,6 +198,8 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
       <p>Apni dukaan ka hisaab — online</p>
     </div>
 
+    <button id="btnInstallLogin" style="display:none; width:100%; margin-bottom:20px; padding:12px; border-radius:12px; border:2px solid var(--navy); background:white; color:var(--navy); font-weight:700; cursor:pointer; font-family:inherit; font-size:0.9rem;">📲 INSTALL MOBILE APP</button>
+
     <div class="tabs">
       <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Login</button>
       <button class="tab-btn" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
@@ -234,6 +245,7 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
   <header>
     <h1><span>📦</span> Stock Tracker</h1>
     <div class="header-right">
+      <button id="btnInstallDash" style="display:none; padding:6px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:white; font-size:0.7rem; font-weight:600; cursor:pointer; margin-right:8px;">📲 INSTALL</button>
       <div class="user-pill">
         <div class="user-avatar" id="userAvatar">?</div>
         <span class="user-name" id="userName">User</span>
@@ -272,10 +284,10 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
       <div class="form-title">✏️ Add Entry</div>
       <div class="form-grid">
         <div class="field"><label>Date</label><input type="date" id="fDate"></div>
-        <div class="field">
+        <div class="field" style="position:relative;">
           <label>Item Name</label>
-          <input type="text" id="fItem" placeholder="e.g. Cheese" list="itemSuggestions" autocomplete="off">
-          <datalist id="itemSuggestions"></datalist>
+          <input type="text" id="fItem" placeholder="e.g. Cheese" autocomplete="off" oninput="filterSuggestions()" onfocus="filterSuggestions()">
+          <div id="suggestionBox" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1.5px solid var(--navy); border-radius:8px; max-height:180px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.12); margin-top:2px;"></div>
         </div>
         <div class="field">
           <label>Unit</label>
@@ -758,9 +770,36 @@ function updateChips() {
   }).join('');
 }
 
-function updateSuggestions() {
-  document.getElementById('itemSuggestions').innerHTML =
-    Object.keys(items).map(k=>`<option value="${items[k].name}">`).join('');
+function updateSuggestions() {}
+
+function filterSuggestions() {
+  const val = document.getElementById('fItem').value.toLowerCase();
+  const box = document.getElementById('suggestionBox');
+  const keys = Object.keys(items);
+  const matches = keys.filter(k => k.includes(val));
+
+  if (!matches.length || (matches.length === 1 && matches[0] === val)) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.innerHTML = matches.map(k => {
+    const it = items[k];
+    return `<div class="suggestion-item" onmousedown="pickSuggestion('${it.name}','${it.unit}')">
+      <span>${it.name}</span>
+      <span class="unit-badge">${it.unit}</span>
+    </div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function pickSuggestion(name, unit) {
+  document.getElementById('fItem').value = name;
+  document.getElementById('fUnit').value = unit;
+  document.getElementById('suggestionBox').style.display = 'none';
+  const prev = records.find(r => r.item.toLowerCase() === name.toLowerCase());
+  if (prev) document.getElementById('fCurrent').placeholder = `Last: ${fmt(prev.balance)} (auto)`;
+  document.getElementById('fNew').focus();
 }
 
 async function updateUsedPreview() {
@@ -850,6 +889,10 @@ document.getElementById('fItem').addEventListener('input', function() {
   }
 });
 
+document.getElementById('fItem').addEventListener('blur', () => {
+  setTimeout(() => { document.getElementById('suggestionBox').style.display = 'none'; }, 150);
+});
+
 document.addEventListener('keydown', e => {
   if (e.key==='Enter' && document.activeElement.tagName==='INPUT') {
     if (document.getElementById('loginScreen').style.display !== 'none') {
@@ -864,6 +907,29 @@ document.addEventListener('keydown', e => {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
 checkUser();
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('btnInstallLogin').style.display = 'block';
+  document.getElementById('btnInstallDash').style.display = 'block';
+});
+
+async function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') deferredPrompt = null;
+  }
+}
+
+document.getElementById('btnInstallLogin').onclick = installApp;
+document.getElementById('btnInstallDash').onclick = installApp;
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 
 // Listen for auth changes
 supabaseClient.auth.onAuthStateChange((event, session) => {
