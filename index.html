@@ -134,6 +134,11 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
 .unit-tag { display:inline-block; font-family:'Space Mono',monospace; font-size:0.60rem; background:var(--navy); color:white; border-radius:4px; padding:1px 5px; }
 .del-btn { background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:0.80rem; padding:2px 5px; border-radius:4px; transition:all 0.12s; }
 .del-btn:hover { color:var(--red); background:#FFF0EE; }
+.edit-btn { background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:0.80rem; padding:2px 5px; border-radius:4px; transition:all 0.12s; }
+.edit-btn:hover { color:var(--navy); background:var(--blue-soft); }
+.btn-cancel { background:transparent; border:1.5px solid var(--gray-400); color:var(--gray-600); border-radius:8px; padding:10px 14px; font-family:'Space Mono',monospace; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.15s; width:100%; margin-top:20px; }
+.btn-cancel:hover { border-color:var(--red); color:var(--red); }
+.form-card.editing { border-color:var(--accent); box-shadow:0 0 0 3px rgba(245,158,11,0.15); }
 .empty-state { text-align:center; padding:44px 20px; color:var(--gray-400); font-size:0.88rem; }
 .empty-state .icon { font-size:2.2rem; margin-bottom:8px; }
 
@@ -294,6 +299,7 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
         </div>
         <div class="field">
           <button class="btn-add" id="btnAdd" onclick="addEntry()" style="margin-top:20px;">+ ADD</button>
+          <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()" style="display:none;">✕ Cancel</button>
         </div>
       </div>
     </div>
@@ -362,6 +368,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let records = [];
 let items = {};
+let editingId = null;
 
 // ── UI HELPERS ───────────────────────────────────────────────────────────────
 function switchTab(t) {
@@ -478,13 +485,15 @@ async function fetchData() {
 }
 
 async function addEntry() {
+  if (editingId) { await updateEntry(); return; }
+
   const date = document.getElementById('fDate').value;
   const item = document.getElementById('fItem').value.trim();
   const unit = document.getElementById('fUnit').value;
   const newStk = parseFloat(document.getElementById('fNew').value) || 0;
   const closing = document.getElementById('fClosing').value;
   let current = document.getElementById('fCurrent').value;
-  
+
   if (!date || !item) { showToast('⚠️ Date aur Item zaroori hai!'); return; }
 
   const btn = document.getElementById('btnAdd');
@@ -530,20 +539,96 @@ async function addEntry() {
   }
 
   showToast('✅ Entry add ho gayi!');
-  
-  // Clear inputs
+  resetForm();
+  await fetchData();
+}
+
+async function updateEntry() {
+  const date = document.getElementById('fDate').value;
+  const item = document.getElementById('fItem').value.trim();
+  const unit = document.getElementById('fUnit').value;
+  const newStk = parseFloat(document.getElementById('fNew').value) || 0;
+  const closing = document.getElementById('fClosing').value;
+  let current = parseFloat(document.getElementById('fCurrent').value) || 0;
+
+  if (!date || !item) { showToast('⚠️ Date aur Item zaroori hai!'); return; }
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.textContent = '...SAVING';
+
+  let used = 0;
+  let balance = current + newStk;
+
+  if (closing !== '') {
+    const closingVal = parseFloat(closing);
+    used = (current + newStk) - closingVal;
+    balance = closingVal;
+  }
+
+  const { error } = await supabaseClient
+    .from('records')
+    .update({ date, item, unit, current, new_stock: newStk, used, balance })
+    .eq('id', editingId);
+
+  btn.disabled = false;
+  btn.textContent = '✏️ UPDATE';
+
+  if (error) {
+    showToast('❌ Update nahi ho saka: ' + error.message);
+    return;
+  }
+
+  showToast('✅ Record update ho gaya!');
+  cancelEdit();
+  await fetchData();
+}
+
+function startEdit(id) {
+  const r = records.find(x => String(x.id) === String(id));
+  if (!r) return;
+
+  editingId = id;
+  document.getElementById('fDate').value = r.date;
+  document.getElementById('fItem').value = r.item;
+  document.getElementById('fUnit').value = r.unit || 'pcs';
+  document.getElementById('fCurrent').value = r.current ?? '';
+  document.getElementById('fNew').value = r.new_stock ?? '';
+  document.getElementById('fClosing').value = r.balance ?? '';
+  document.getElementById('usedPreview').style.display = 'none';
+
+  const btn = document.getElementById('btnAdd');
+  btn.textContent = '✏️ UPDATE';
+  document.getElementById('btnCancel').style.display = 'block';
+  document.querySelector('.form-card').classList.add('editing');
+  document.querySelector('.form-title').textContent = '✏️ Edit Entry';
+
+  document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetForm();
+  document.querySelector('.form-card').classList.remove('editing');
+  document.querySelector('.form-title').textContent = '✏️ Add Entry';
+}
+
+function resetForm() {
+  document.getElementById('fItem').value = '';
   document.getElementById('fCurrent').value = '';
   document.getElementById('fNew').value = '';
   document.getElementById('fClosing').value = '';
   document.getElementById('usedPreview').style.display = 'none';
   document.getElementById('fCurrent').placeholder = 'auto';
+  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('btnAdd').textContent = '+ ADD';
+  document.getElementById('btnCancel').style.display = 'none';
   document.getElementById('fItem').focus();
-  
-  await fetchData();
 }
 
 window.deleteEntry = deleteEntry;
 window.clearAll = clearAll;
+window.startEdit = startEdit;
 
 async function deleteEntry(id) {
   if (!confirm('Kya aap yeh record delete karna chahte hain?')) return;
@@ -558,10 +643,6 @@ async function deleteEntry(id) {
     return;
   }
   
-  showToast('🗑 Deleted');
-  await fetchData();
-}
-
   showToast('🗑 Deleted');
   await fetchData();
 }
@@ -647,7 +728,10 @@ function renderTable() {
       <td class="num">${fmt(r.new_stock)}</td>
       <td class="num">${fmt(r.used)}</td>
       <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span class="unit-tag">${r.unit||''}</span></td>
-      <td><button class="del-btn" onclick="window.deleteEntry('${r.id}')" title="Delete" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">🗑</button></td>
+      <td style="white-space:nowrap;">
+        <button class="edit-btn" onclick="window.startEdit('${r.id}')" title="Edit">✏️</button>
+        <button class="del-btn" onclick="window.deleteEntry('${r.id}')" title="Delete">🗑</button>
+      </td>
     </tr>`;
   }).join('');
 }
