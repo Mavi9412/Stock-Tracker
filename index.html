@@ -286,7 +286,7 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
         </div>
         <div class="field"><label>Current Stock</label><input type="number" id="fCurrent" placeholder="auto" min="0"></div>
         <div class="field"><label>New Stock (IN)</label><input type="number" id="fNew" placeholder="0" min="0"></div>
-        <div class="field"><label>Used (OUT)</label><input type="number" id="fUsed" placeholder="0" min="0"></div>
+        <div class="field"><label>Closing Stock</label><input type="number" id="fClosing" placeholder="End of day" min="0"></div>
         <button class="btn-add" id="btnAdd" onclick="addEntry()">+ ADD</button>
       </div>
     </div>
@@ -463,7 +463,7 @@ async function addEntry() {
   const item = document.getElementById('fItem').value.trim();
   const unit = document.getElementById('fUnit').value;
   const newStk = parseFloat(document.getElementById('fNew').value) || 0;
-  const used = parseFloat(document.getElementById('fUsed').value) || 0;
+  const closing = document.getElementById('fClosing').value;
   let current = document.getElementById('fCurrent').value;
   
   if (!date || !item) { showToast('⚠️ Date aur Item zaroori hai!'); return; }
@@ -479,7 +479,14 @@ async function addEntry() {
     current = parseFloat(current);
   }
 
-  const balance = current + newStk - used;
+  let used = 0;
+  let balance = current + newStk;
+
+  if (closing !== '') {
+    const closingVal = parseFloat(closing);
+    used = (current + newStk) - closingVal;
+    balance = closingVal;
+  }
 
   const { data, error } = await supabaseClient
     .from('records')
@@ -490,7 +497,7 @@ async function addEntry() {
       unit,
       current,
       new_stock: newStk,
-      used,
+      used: used,
       balance
     }]);
 
@@ -508,7 +515,7 @@ async function addEntry() {
   // Clear inputs
   document.getElementById('fCurrent').value = '';
   document.getElementById('fNew').value = '';
-  document.getElementById('fUsed').value = '';
+  document.getElementById('fClosing').value = '';
   document.getElementById('fCurrent').placeholder = 'auto';
   document.getElementById('fItem').focus();
   
