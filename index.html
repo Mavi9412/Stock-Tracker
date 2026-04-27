@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#1A3C5E; --navy-light:#2a5580; --navy-dark:#122a42;
+  --blue-soft:#D6EAF8; --green-soft:#D5F5E3; --yellow-soft:#FEF9E7;
+  --pink-soft:#F9EBEA; --sky-soft:#EBF5FB;
+  --gray-50:#F8FAFC; --gray-100:#F0F4F8; --gray-200:#E2E8F0;
+  --gray-400:#94A3B8; --gray-600:#475569; --gray-800:#1E293B;
+  --red:#E74C3C; --green:#27AE60; --accent:#F59E0B;
+  --radius:12px; --shadow:0 4px 24px rgba(26,60,94,0.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh;}
+
+/* ── LOGIN SCREEN ── */
+#loginScreen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 50%,#1a5276 100%);
+  padding:20px;
+}
+.login-card {
+  background:white; border-radius:20px; padding:40px 36px;
+  width:100%; max-width:400px; box-shadow:0 24px 64px rgba(0,0,0,0.25);
+}
+.login-logo { text-align:center; margin-bottom:28px; }
+.login-logo .icon { font-size:2.8rem; display:block; margin-bottom:8px; }
+.login-logo h2 { font-family:'Space Mono',monospace; font-size:1.15rem; color:var(--navy); letter-spacing:1px; }
+.login-logo p { font-size:0.80rem; color:var(--gray-400); margin-top:4px; }
+
+.tabs { display:flex; background:var(--gray-100); border-radius:10px; padding:4px; margin-bottom:24px; }
+.tab-btn { flex:1; padding:8px; border:none; background:transparent; border-radius:7px; font-family:'Space Mono',monospace; font-size:0.72rem; font-weight:700; color:var(--gray-400); cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+.tab-btn.active { background:white; color:var(--navy); box-shadow:0 2px 8px rgba(0,0,0,0.10); }
+
+.login-field { margin-bottom:14px; }
+.login-field label { display:block; font-size:0.72rem; font-weight:600; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; }
+.login-field input {
+  width:100%; border:1.5px solid var(--gray-200); border-radius:9px;
+  padding:11px 14px; font-family:'DM Sans',sans-serif; font-size:0.93rem;
+  color:var(--gray-800); background:var(--gray-50); outline:none; transition:all 0.2s;
+}
+.login-field input:focus { border-color:var(--navy); background:white; box-shadow:0 0 0 3px rgba(26,60,94,0.09); }
+
+.btn-login {
+  width:100%; background:var(--navy); color:white; border:none; border-radius:9px;
+  padding:12px; font-family:'Space Mono',monospace; font-size:0.85rem; font-weight:700;
+  cursor:pointer; transition:all 0.18s; letter-spacing:0.5px; margin-top:6px;
+}
+.btn-login:hover { background:var(--navy-light); transform:translateY(-1px); }
+.login-error { background:#FFF0EE; border:1px solid #FADBD8; color:var(--red); border-radius:8px; padding:10px 14px; font-size:0.83rem; margin-bottom:14px; display:none; }
+.login-hint { font-size:0.75rem; color:var(--gray-400); text-align:center; margin-top:14px; line-height:1.5; }
+
+/* ── APP ── */
+#appScreen { display:none; }
+
+header {
+  background:var(--navy); padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 16px rgba(0,0,0,0.18); position:sticky; top:0; z-index:100;
+}
+header h1 { font-family:'Space Mono',monospace; font-size:1.05rem; color:white; display:flex; align-items:center; gap:9px; }
+.header-right { display:flex; align-items:center; gap:12px; }
+.user-pill {
+  display:flex; align-items:center; gap:7px;
+  background:rgba(255,255,255,0.12); border-radius:20px; padding:6px 12px 6px 8px;
+}
+.user-avatar { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:0.68rem; font-weight:700; color:white; }
+.user-name { font-size:0.80rem; color:rgba(255,255,255,0.85); font-weight:500; }
+.btn-logout {
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.75); border-radius:7px; padding:6px 12px;
+  font-family:'Space Mono',monospace; font-size:0.68rem; cursor:pointer;
+  transition:all 0.15s; font-weight:700; letter-spacing:0.4px;
+}
+.btn-logout:hover { background:rgba(231,76,60,0.7); color:white; border-color:transparent; }
+
+main { max-width:1020px; margin:0 auto; padding:22px 16px 60px; }
+
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+.stat-card { background:white; border-radius:var(--radius); padding:14px 17px; border:1px solid var(--gray-200); box-shadow:var(--shadow); }
+.stat-label { font-size:0.67rem; font-weight:600; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:3px; }
+.stat-value { font-family:'Space Mono',monospace; font-size:1.4rem; font-weight:700; color:var(--navy); }
+.stat-sub { font-size:0.68rem; color:var(--gray-400); margin-top:2px; }
+
+.form-card { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:18px; border:1px solid var(--gray-200); }
+.form-title { font-family:'Space Mono',monospace; font-size:0.73rem; font-weight:700; color:var(--navy); letter-spacing:1px; text-transform:uppercase; margin-bottom:13px; }
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; align-items:end; }
+.field { display:flex; flex-direction:column; gap:4px; }
+label { font-size:0.69rem; font-weight:600; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.6px; }
+input,select { border:1.5px solid var(--gray-200); border-radius:8px; padding:9px 11px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--gray-800); background:var(--gray-50); outline:none; transition:all 0.2s; width:100%; }
+input:focus,select:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(26,60,94,0.09); background:white; }
+select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
+.btn-add { background:var(--navy); color:white; border:none; border-radius:8px; padding:10px 16px; font-family:'Space Mono',monospace; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.15s; white-space:nowrap; align-self:end; width:100%; }
+.btn-add:hover { background:var(--navy-light); transform:translateY(-1px); }
+
+.items-panel { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 18px; margin-bottom:18px; border:1px solid var(--gray-200); }
+.items-panel-title { font-family:'Space Mono',monospace; font-size:0.70rem; font-weight:700; color:var(--navy); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.items-chips { display:flex; flex-wrap:wrap; gap:7px; }
+.item-chip { display:inline-flex; align-items:center; gap:6px; background:var(--gray-100); border:1px solid var(--gray-200); border-radius:20px; padding:5px 11px 5px 10px; font-size:0.78rem; font-weight:500; cursor:pointer; transition:all 0.15s; user-select:none; }
+.item-chip:hover { background:var(--blue-soft); border-color:var(--navy); color:var(--navy); }
+.unit-badge { font-family:'Space Mono',monospace; font-size:0.62rem; background:var(--navy); color:white; border-radius:4px; padding:1px 5px; }
+.del-chip { color:var(--gray-400); font-size:0.73rem; }
+.del-chip:hover { color:var(--red); }
+.no-items { color:var(--gray-400); font-size:0.82rem; font-style:italic; }
+
+.table-card { background:white; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; border:1px solid var(--gray-200); }
+.table-header-bar { display:flex; align-items:center; justify-content:space-between; padding:13px 17px 11px; border-bottom:1px solid var(--gray-100); gap:10px; flex-wrap:wrap; }
+.table-title { font-family:'Space Mono',monospace; font-size:0.73rem; font-weight:700; color:var(--navy); letter-spacing:1px; text-transform:uppercase; }
+.filter-input { border:1.5px solid var(--gray-200); border-radius:8px; padding:7px 11px; font-size:0.83rem; width:180px; font-family:'DM Sans',sans-serif; outline:none; }
+.filter-input:focus { border-color:var(--navy); }
+.btn-sm { background:transparent; border:1.5px solid var(--navy); color:var(--navy); border-radius:8px; padding:6px 11px; font-family:'Space Mono',monospace; font-size:0.67rem; cursor:pointer; transition:all 0.15s; font-weight:700; white-space:nowrap; }
+.btn-sm:hover { background:var(--navy); color:white; }
+.btn-sm.danger { border-color:var(--red); color:var(--red); }
+.btn-sm.danger:hover { background:var(--red); color:white; }
+
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:660px; }
+thead tr { background:var(--navy); }
+thead th { padding:10px 13px; text-align:left; font-family:'Space Mono',monospace; font-size:0.67rem; color:white; font-weight:700; letter-spacing:0.8px; white-space:nowrap; }
+thead th.num { text-align:right; }
+tbody tr { border-bottom:1px solid var(--gray-100); transition:filter 0.12s; }
+tbody tr:hover { filter:brightness(0.96); }
+tbody tr:last-child { border-bottom:none; }
+td { padding:9px 13px; font-size:0.86rem; white-space:nowrap; }
+td.num { text-align:right; font-family:'Space Mono',monospace; }
+td.balance { text-align:right; font-family:'Space Mono',monospace; font-weight:700; }
+td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--gray-600); }
+.unit-tag { display:inline-block; font-family:'Space Mono',monospace; font-size:0.60rem; background:var(--navy); color:white; border-radius:4px; padding:1px 5px; }
+.del-btn { background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:0.80rem; padding:2px 5px; border-radius:4px; transition:all 0.12s; }
+.del-btn:hover { color:var(--red); background:#FFF0EE; }
+.empty-state { text-align:center; padding:44px 20px; color:var(--gray-400); font-size:0.88rem; }
+.empty-state .icon { font-size:2.2rem; margin-bottom:8px; }
+
+.dc-0{background:var(--blue-soft);} .dc-1{background:var(--green-soft);}
+.dc-2{background:var(--yellow-soft);} .dc-3{background:var(--pink-soft);}
+.dc-4{background:var(--sky-soft);}
+
+.toast { position:fixed; bottom:20px; right:20px; background:var(--navy); color:white; padding:11px 18px; border-radius:10px; font-size:0.82rem; font-weight:500; box-shadow:0 8px 32px rgba(26,60,94,0.25); transform:translateY(80px); opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index:9999; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+@media(max-width:600px){
+  header{padding:12px 14px;}
+  .user-name{display:none;}
+  main{padding:14px 10px 60px;}
+  .form-grid{grid-template-columns:1fr 1fr;}
+  .filter-input{width:120px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ LOGIN SCREEN ════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">📦</span>
+      <h2>STOCK TRACKER</h2>
+      <p>Apni dukaan ka hisaab — online</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="loginError" class="login-error"></div>
+
+    <!-- Login Form -->
+    <div id="formLogin">
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="lEmail" placeholder="apna email likhein" autocomplete="email">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="lPassword" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-login" onclick="doLogin()">🔐 Login Karein</button>
+      <p class="login-hint">Apne account se login karein</p>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="formSignup" style="display:none">
+      <div class="login-field">
+        <label>Full Name</label>
+        <input type="text" id="sName" placeholder="e.g. Malik Store">
+      </div>
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="sEmail" placeholder="your@email.com">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="sPassword" placeholder="min 6 characters">
+      </div>
+      <button class="btn-login" onclick="doSignup()">✅ Account Banayein</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ APP SCREEN ════════════════ -->
+<div id="appScreen" style="display:none">
+  <header>
+    <h1><span>📦</span> Stock Tracker</h1>
+    <div class="header-right">
+      <div class="user-pill">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span class="user-name" id="userName">User</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">⏻ Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Entries</div>
+        <div class="stat-value" id="statEntries">0</div>
+        <div class="stat-sub">all records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total IN</div>
+        <div class="stat-value" id="statIn">0</div>
+        <div class="stat-sub">stock added</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Used</div>
+        <div class="stat-value" id="statUsed">0</div>
+        <div class="stat-sub">consumed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Items</div>
+        <div class="stat-value" id="statItems">0</div>
+        <div class="stat-sub">unique items</div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="form-card">
+      <div class="form-title">✏️ Add Entry</div>
+      <div class="form-grid">
+        <div class="field"><label>Date</label><input type="date" id="fDate"></div>
+        <div class="field">
+          <label>Item Name</label>
+          <input type="text" id="fItem" placeholder="e.g. Cheese" list="itemSuggestions" autocomplete="off">
+          <datalist id="itemSuggestions"></datalist>
+        </div>
+        <div class="field">
+          <label>Unit</label>
+          <select id="fUnit">
+            <option value="pcs">pcs</option><option value="kg">kg</option>
+            <option value="g">g (grams)</option><option value="L">L (litre)</option>
+            <option value="mL">mL</option><option value="dozen">dozen</option>
+            <option value="packet">packet</option><option value="box">box</option>
+            <option value="bottle">bottle</option><option value="tray">tray</option>
+            <option value="bag">bag</option><option value="bundle">bundle</option>
+            <option value="sack">sack</option><option value="can">can</option>
+            <option value="roll">roll</option>
+          </select>
+        </div>
+        <div class="field"><label>Current Stock</label><input type="number" id="fCurrent" placeholder="auto" min="0"></div>
+        <div class="field"><label>New Stock (IN)</label><input type="number" id="fNew" placeholder="0" min="0"></div>
+        <div class="field"><label>Used (OUT)</label><input type="number" id="fUsed" placeholder="0" min="0"></div>
+        <button class="btn-add" id="btnAdd" onclick="addEntry()">+ ADD</button>
+      </div>
+    </div>
+
+    <!-- Saved Items -->
+    <div class="items-panel">
+      <div class="items-panel-title">🏷️ Saved Items — click to quick-fill</div>
+      <div class="items-chips" id="itemsChips"><span class="no-items">Koi item nahi. Pehli entry add karein.</span></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header-bar">
+        <div class="table-title">📋 Daily Records</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input class="filter-input" type="text" id="filterInput" placeholder="🔍 Filter..." oninput="renderTable()">
+          <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
+          <button class="btn-sm danger" onclick="clearAll()">🗑 Clear</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Item Name</th><th>Unit</th>
+              <th class="num">Current</th><th class="num">IN</th>
+              <th class="num">OUT</th><th class="num">Balance</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState">
+          <div class="icon">📭</div>
+          <div>Koi record nahi. Upar se pehli entry add karein!</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://bkgyqaurdrqwxbftqmyu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZ3lxYXVyZHJxd3hiZnRxbXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzYzMDMsImV4cCI6MjA5Mjg1MjMwM30.qVL4DKkhAoHNuEuvdvJQAdIdf6actifHfpnJcEej650';
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let records = [];
+let items = {};
+
+// ── UI HELPERS ───────────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById('formLogin').style.display  = t==='login'  ? '' : 'none';
+  document.getElementById('formSignup').style.display = t==='signup' ? '' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active',  t==='login');
+  document.getElementById('tabSignup').classList.toggle('active', t==='signup');
+  hideError();
+}
+
+function showError(msg){ const e=document.getElementById('loginError'); e.textContent=msg; e.style.display='block'; }
+function hideError()   { document.getElementById('loginError').style.display='none'; }
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const password = document.getElementById('lPassword').value;
+  
+  if (!email || !password) { showError('❌ Email aur Password bharein!'); return; }
+  
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  
+  if (error) { showError('❌ ' + error.message); return; }
+  
+  checkUser();
+}
+
+async function doSignup() {
+  const name = document.getElementById('sName').value.trim();
+  const email = document.getElementById('sEmail').value.trim();
+  const password = document.getElementById('sPassword').value;
+  
+  if (!name || !email || !password) { showError('❌ Saare fields bharein!'); return; }
+  if (password.length < 6) { showError('❌ Password kam az kam 6 characters ka ho!'); return; }
+  
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: name }
+    }
+  });
+  
+  if (error) { showError('❌ ' + error.message); return; }
+  
+  showToast('✅ Verification email bheja gaya hai (ya login karein agar direct active hai)');
+  if (data.user) checkUser();
+}
+
+async function doLogout() {
+  if (!confirm('Logout karna chahte hain?')) return;
+  await supabaseClient.auth.signOut();
+  checkUser();
+  showToast('👋 Logout ho gaye!');
+}
+
+async function checkUser() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    
+    const name = currentUser.user_metadata.full_name || currentUser.email;
+    document.getElementById('userName').textContent = name;
+    document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+    
+    await fetchData();
+  } else {
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+  }
+}
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+async function fetchData() {
+  // Fetch records
+  const { data: recordsData, error: recordsError } = await supabaseClient
+    .from('records')
+    .select('*')
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false });
+    
+  if (recordsError) {
+    console.error('Error fetching records:', recordsError);
+    showToast('❌ Data fetch karne mein masla hua');
+    return;
+  }
+  
+  records = recordsData || [];
+  
+  // Extract unique items from records to build the items list
+  // In a more complex app, you might have a separate 'items' table
+  items = {};
+  records.forEach(r => {
+    const key = r.item.toLowerCase();
+    if (!items[key]) {
+      items[key] = { name: r.item, unit: r.unit };
+    }
+  });
+  
+  renderTable();
+  updateStats();
+  updateChips();
+  updateSuggestions();
+}
+
+async function addEntry() {
+  const date = document.getElementById('fDate').value;
+  const item = document.getElementById('fItem').value.trim();
+  const unit = document.getElementById('fUnit').value;
+  const newStk = parseFloat(document.getElementById('fNew').value) || 0;
+  const used = parseFloat(document.getElementById('fUsed').value) || 0;
+  let current = document.getElementById('fCurrent').value;
+  
+  if (!date || !item) { showToast('⚠️ Date aur Item zaroori hai!'); return; }
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.textContent = '...ADDING';
+
+  if (current === '') {
+    const prev = records.find(r => r.item.toLowerCase() === item.toLowerCase());
+    current = prev ? prev.balance : 0;
+  } else {
+    current = parseFloat(current);
+  }
+
+  const balance = current + newStk - used;
+
+  const { data, error } = await supabaseClient
+    .from('records')
+    .insert([{
+      user_id: currentUser.id,
+      date,
+      item,
+      unit,
+      current,
+      new_stock: newStk,
+      used,
+      balance
+    }]);
+
+  btn.disabled = false;
+  btn.textContent = '+ ADD';
+
+  if (error) {
+    console.error('Error adding entry:', error);
+    showToast('❌ Entry add nahi hui: ' + error.message);
+    return;
+  }
+
+  showToast('✅ Entry add ho gayi!');
+  
+  // Clear inputs
+  document.getElementById('fCurrent').value = '';
+  document.getElementById('fNew').value = '';
+  document.getElementById('fUsed').value = '';
+  document.getElementById('fCurrent').placeholder = 'auto';
+  document.getElementById('fItem').focus();
+  
+  await fetchData();
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Kya aap yeh record delete karna chahte hain?')) return;
+  
+  const { error } = await supabaseClient
+    .from('records')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    showToast('❌ Delete nahi ho saka');
+    return;
+  }
+  
+  showToast('🗑 Deleted');
+  await fetchData();
+}
+
+async function clearAll() {
+  if (!confirm('Aap ke SARE records delete ho jayenge. Kya aap sure hain?')) return;
+  
+  const { error } = await supabaseClient
+    .from('records')
+    .delete()
+    .eq('user_id', currentUser.id);
+    
+  if (error) {
+    showToast('❌ Clear nahi ho saka');
+    return;
+  }
+  
+  showToast('🗑 All records cleared');
+  await fetchData();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+const DATE_COLORS = ['dc-0','dc-1','dc-2','dc-3','dc-4'];
+
+function renderTable() {
+  const filter = (document.getElementById('filterInput')?.value || '').toLowerCase();
+  
+  const filtered = records.filter(r =>
+    r.item.toLowerCase().includes(filter) ||
+    r.date.includes(filter) ||
+    formatDate(r.date).toLowerCase().includes(filter) ||
+    (r.unit||'').toLowerCase().includes(filter)
+  );
+  
+  const dateColorMap = {};
+  let ci = 0;
+  // Use a copy to avoid mutating state during color mapping
+  [...filtered].reverse().forEach(r => { 
+    if(!(r.date in dateColorMap)) dateColorMap[r.date]=DATE_COLORS[ci++%5]; 
+  });
+  
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  
+  if (!filtered.length) { 
+    tbody.innerHTML=''; 
+    empty.style.display='block'; 
+    return; 
+  }
+  
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map(r => {
+    const cls = dateColorMap[r.date] || '';
+    const balColor = r.balance < 0 ? '#E74C3C' : '#1A3C5E';
+    const unit = r.unit || 'pcs';
+    return `<tr class="${cls}">
+      <td class="date-cell">${formatDate(r.date)}</td>
+      <td>${r.item}</td>
+      <td><span class="unit-tag">${unit}</span></td>
+      <td class="num">${fmt(r.current)}</td>
+      <td class="num">${fmt(r.new_stock)}</td>
+      <td class="num">${fmt(r.used)}</td>
+      <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span style="font-family:'DM Sans';font-size:0.68rem;font-weight:400;color:#94A3B8">${unit}</span></td>
+      <td><button class="del-btn" onclick="deleteEntry(${r.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('statEntries').textContent = records.length;
+  document.getElementById('statIn').textContent      = fmt(records.reduce((s,x)=>s+(x.new_stock||0),0));
+  document.getElementById('statUsed').textContent    = fmt(records.reduce((s,x)=>s+(x.used||0),0));
+  document.getElementById('statItems').textContent   = Object.keys(items).length;
+}
+
+function updateChips() {
+  const keys = Object.keys(items);
+  const el = document.getElementById('itemsChips');
+  if (!keys.length) { 
+    el.innerHTML = '<span class="no-items">Koi item nahi. Pehli entry add karein.</span>'; 
+    return; 
+  }
+  el.innerHTML = keys.map(k => {
+    const it = items[k];
+    return `<div class="item-chip" onclick="fillFromChip('${it.name}','${it.unit}')">
+      ${it.name} <span class="unit-badge">${it.unit}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateSuggestions() {
+  document.getElementById('itemSuggestions').innerHTML =
+    Object.keys(items).map(k=>`<option value="${items[k].name}">`).join('');
+}
+
+function fillFromChip(name, unit) {
+  document.getElementById('fItem').value = name;
+  document.getElementById('fUnit').value = unit;
+  const prev = records.find(r => r.item.toLowerCase() === name.toLowerCase());
+  if (prev) document.getElementById('fCurrent').placeholder = `Last: ${fmt(prev.balance)} (auto)`;
+  document.getElementById('fNew').focus();
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function fmt(n){ if(n===''||n===null||n===undefined||isNaN(n))return '—'; return Number(n).toLocaleString(); }
+
+function formatDate(d){
+  if(!d)return '';
+  const [y,m,day]=d.split('-');
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(day)}-${mo[parseInt(m)-1]}-${y}`;
+}
+
+function exportCSV() {
+  if (!records.length) { showToast('Koi data nahi!'); return; }
+  const header = 'Date,Item,Unit,Current,New IN,Used OUT,Balance\n';
+  const rows = records.map(r=>`${r.date},"${r.item}","${r.unit||'pcs'}",${r.current},${r.new_stock},${r.used},${r.balance}`).join('\n');
+  const a = document.createElement('a');
+  const name = currentUser.user_metadata.full_name || 'user';
+  a.href = URL.createObjectURL(new Blob([header+rows],{type:'text/csv'}));
+  a.download = `stock-${name}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast('📥 CSV downloaded!');
+}
+
+// ── LISTENERS ────────────────────────────────────────────────────────────────
+document.getElementById('fItem').addEventListener('input', function() {
+  const val = this.value.trim().toLowerCase();
+  const match = items[val];
+  if (match) {
+    document.getElementById('fUnit').value = match.unit || 'pcs';
+    const prev = records.find(r => r.item.toLowerCase() === val);
+    if (prev) document.getElementById('fCurrent').placeholder = `Last: ${fmt(prev.balance)} (auto)`;
+  } else {
+    document.getElementById('fCurrent').placeholder = 'auto';
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.activeElement.tagName==='INPUT') {
+    if (document.getElementById('loginScreen').style.display !== 'none') {
+      const tab = document.getElementById('tabLogin').classList.contains('active') ? 'login' : 'signup';
+      tab === 'login' ? doLogin() : doSignup();
+    } else { 
+      if (document.activeElement.id !== 'filterInput') addEntry(); 
+    }
+  }
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+checkUser();
+
+// Listen for auth changes
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+    checkUser();
+  }
+});
+
+</script>
+</body>
+</html>
