@@ -292,9 +292,8 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
           <input type="number" id="fClosing" placeholder="End of day" min="0" oninput="updateUsedPreview()">
           <div style="height:15px;"><small id="usedPreview" style="color:var(--gray-400); font-size:0.65rem; font-weight:700; display:none;">Used: 0</small></div>
         </div>
-        <div class="field" style="flex-direction:row; gap:8px;">
+        <div class="field">
           <button class="btn-add" id="btnAdd" onclick="addEntry()" style="margin-top:20px;">+ ADD</button>
-          <button class="btn-add" id="btnCancelEdit" onclick="cancelEdit()" style="margin-top:20px; background:var(--gray-400); display:none;">Cancel</button>
         </div>
       </div>
     </div>
@@ -363,7 +362,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let records = [];
 let items = {};
-let editId = null;
 
 // ── UI HELPERS ───────────────────────────────────────────────────────────────
 function switchTab(t) {
@@ -509,19 +507,21 @@ async function addEntry() {
     balance = closingVal;
   }
 
-  const { data, error } = await (editId 
-    ? supabaseClient.from('records').update({
-        date, item, unit, current, new_stock: newStk, used: used, balance
-      }).eq('id', editId)
-    : supabaseClient.from('records').insert([{
-        user_id: currentUser.id, date, item, unit, current, new_stock: newStk, used: used, balance
-      }])
-  );
+  const { error } = await supabaseClient
+    .from('records')
+    .insert([{
+      user_id: currentUser.id,
+      date,
+      item,
+      unit,
+      current,
+      new_stock: newStk,
+      used: used,
+      balance
+    }]);
 
   btn.disabled = false;
   btn.textContent = '+ ADD';
-  editId = null;
-  document.getElementById('btnCancelEdit').style.display = 'none';
 
   if (error) {
     console.error('Error adding entry:', error);
@@ -542,9 +542,7 @@ async function addEntry() {
   await fetchData();
 }
 
-window.editEntry = editEntry;
 window.deleteEntry = deleteEntry;
-window.cancelEdit = cancelEdit;
 window.clearAll = clearAll;
 
 async function deleteEntry(id) {
@@ -564,36 +562,8 @@ async function deleteEntry(id) {
   await fetchData();
 }
 
-function editEntry(id) {
-  const r = records.find(x => x.id === id);
-  if (!r) return;
-  
-  editId = id;
-  document.getElementById('fDate').value = r.date;
-  document.getElementById('fItem').value = r.item;
-  document.getElementById('fUnit').value = r.unit;
-  document.getElementById('fCurrent').value = r.current;
-  document.getElementById('fNew').value = r.new_stock;
-  document.getElementById('fClosing').value = r.balance;
-  
-  document.getElementById('btnAdd').textContent = 'UPDATE';
-  document.getElementById('btnCancelEdit').style.display = 'block';
-  
-  updateUsedPreview();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function cancelEdit() {
-  editId = null;
-  document.getElementById('btnAdd').textContent = '+ ADD';
-  document.getElementById('btnCancelEdit').style.display = 'none';
-  
-  // Clear inputs
-  document.getElementById('fCurrent').value = '';
-  document.getElementById('fNew').value = '';
-  document.getElementById('fClosing').value = '';
-  document.getElementById('usedPreview').style.display = 'none';
-  document.getElementById('fItem').focus();
+  showToast('🗑 Deleted');
+  await fetchData();
 }
 
 async function clearAll() {
@@ -677,12 +647,7 @@ function renderTable() {
       <td class="num">${fmt(r.new_stock)}</td>
       <td class="num">${fmt(r.used)}</td>
       <td class="balance" style="color:${balColor}">${fmt(r.balance)} <span class="unit-tag">${r.unit||''}</span></td>
-      <td>
-        <div style="display:flex; gap:10px;">
-          <button class="edit-btn" data-id="${r.id}" style="cursor:pointer; background:#F39C12; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; font-weight:700;">EDIT</button>
-          <button class="del-btn" data-id="${r.id}" style="cursor:pointer; background:#E74C3C; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; font-weight:700;">DEL</button>
-        </div>
-      </td>
+      <td><button class="del-btn" onclick="window.deleteEntry('${r.id}')" title="Delete" style="cursor:pointer; background:none; border:none; font-size:1.1rem;">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -789,20 +754,6 @@ function exportCSV() {
 }
 
 // ── LISTENERS ────────────────────────────────────────────────────────────────
-document.addEventListener('click', e => {
-  const editBtn = e.target.closest('.edit-btn');
-  const delBtn = e.target.closest('.del-btn');
-  
-  if (editBtn) {
-    const id = editBtn.getAttribute('data-id');
-    console.log('Edit action triggered for:', id);
-    editEntry(id);
-  } else if (delBtn) {
-    const id = delBtn.getAttribute('data-id');
-    deleteEntry(id);
-  }
-});
-
 document.getElementById('fItem').addEventListener('input', function() {
   const val = this.value.trim().toLowerCase();
   const match = items[val];
