@@ -189,6 +189,20 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
 </head>
 <body>
 
+<!-- ════════════════ SPLASH SCREEN ════════════════ -->
+<div id="splashScreen" style="
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 50%,#1a5276 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  transition:opacity 0.4s ease;
+">
+  <div style="font-size:3.5rem;">📦</div>
+  <div style="font-family:'Space Mono',monospace; font-size:1.2rem; color:white; letter-spacing:2px; font-weight:700;">STOCK TRACKER</div>
+  <div style="font-size:0.75rem; color:rgba(255,255,255,0.5); font-family:'Space Mono',monospace; letter-spacing:0.5px; margin-top:40px;">
+    Powered by <span style="color:var(--accent); font-weight:700;">Mavi</span>
+  </div>
+</div>
+
 <!-- ════════════════ LOGIN SCREEN ════════════════ -->
 <div id="loginScreen">
   <div class="login-card">
@@ -237,6 +251,9 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
       </div>
       <button class="btn-login" onclick="doSignup()">✅ Account Banayein</button>
     </div>
+    <p style="text-align:center; margin-top:20px; font-size:0.70rem; color:var(--gray-400); font-family:'Space Mono',monospace; letter-spacing:0.5px;">
+      Powered by <span style="color:var(--navy); font-weight:700;">Mavi</span>
+    </p>
   </div>
 </div>
 
@@ -362,6 +379,9 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
       </div>
     </div>
   </main>
+  <div style="text-align:center; padding:16px; font-size:0.72rem; color:var(--gray-400); font-family:'Space Mono',monospace; letter-spacing:0.5px;">
+    Powered by <span style="color:var(--navy); font-weight:700;">Mavi</span>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -930,6 +950,13 @@ document.getElementById('btnInstallDash').onclick = installApp;
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
+
+// Splash screen — 1.5 second baad hide ho ga
+setTimeout(() => {
+  const splash = document.getElementById('splashScreen');
+  splash.style.opacity = '0';
+  setTimeout(() => splash.style.display = 'none', 400);
+}, 1500);
 
 // Listen for auth changes
 supabaseClient.auth.onAuthStateChange((event, session) => {
