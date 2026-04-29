@@ -194,21 +194,23 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
 
 /* ── RECIPE CARDS ── */
 .recipe-card { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); box-shadow:var(--shadow); margin-bottom:12px; overflow:hidden; }
-.recipe-card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 17px; cursor:pointer; gap:10px; }
+.recipe-card-header { display:flex; align-items:flex-start; justify-content:space-between; padding:13px 14px; cursor:pointer; gap:8px; }
 .recipe-card-header:hover { background:var(--gray-50); }
-.recipe-card-title { font-weight:600; font-size:0.95rem; color:var(--gray-800); }
-.recipe-card-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }
-.badge { display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:20px; font-family:'Space Mono',monospace; letter-spacing:0.3px; }
+.recipe-card-title { font-weight:600; font-size:0.92rem; color:var(--gray-800); word-break:break-word; }
+.recipe-card-meta { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:5px; }
+.badge { display:inline-block; font-size:0.62rem; font-weight:700; padding:2px 7px; border-radius:20px; font-family:'Space Mono',monospace; letter-spacing:0.3px; white-space:nowrap; }
 .badge-cat { background:var(--blue-soft); color:var(--navy); }
 .badge-sub { background:var(--yellow-soft); color:#92600A; }
 .badge-ing { background:var(--green-soft); color:#1a6b3a; }
-.recipe-card-body { padding:0 17px 16px; border-top:1px solid var(--gray-100); display:none; }
+.recipe-card-actions { display:flex; gap:4px; flex-shrink:0; padding-top:2px; }
+.recipe-card-body { padding:10px 14px 14px; border-top:1px solid var(--gray-100); display:none; overflow-x:auto; }
 .recipe-card-body.open { display:block; }
-.ing-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:0.84rem; }
-.ing-table th { text-align:left; font-size:0.65rem; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.6px; padding:4px 8px 6px; }
-.ing-table td { padding:5px 8px; border-bottom:1px solid var(--gray-100); }
+.ing-table { width:100%; border-collapse:collapse; margin:6px 0 10px; font-size:0.82rem; min-width:220px; }
+.ing-table th { text-align:left; font-size:0.63rem; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.6px; padding:3px 8px 5px; white-space:nowrap; }
+.ing-table td { padding:6px 8px; border-bottom:1px solid var(--gray-100); vertical-align:middle; }
+.ing-table td:first-child { font-weight:500; }
 .ing-table tr:last-child td { border-bottom:none; }
-.instructions-box { background:var(--gray-50); border-radius:8px; padding:10px 13px; font-size:0.84rem; color:var(--gray-600); white-space:pre-wrap; margin-top:8px; line-height:1.6; }
+.instructions-box { background:var(--gray-50); border-radius:8px; padding:10px 13px; font-size:0.82rem; color:var(--gray-600); white-space:pre-wrap; margin-top:6px; line-height:1.65; word-break:break-word; }
 .recipe-actions { display:flex; gap:8px; margin-top:12px; }
 
 /* ── INGREDIENT ROW ── */
@@ -226,7 +228,16 @@ textarea.recipe-textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px 
 @media(max-width:600px){
   .nav-tabs { padding:0 10px; }
   .nav-tab { padding:10px 12px; font-size:0.66rem; }
-  .ingredient-row { grid-template-columns:1fr 65px 85px 34px; }
+  .ingredient-row { grid-template-columns:1fr 60px 80px 32px; gap:4px; }
+  .ingredient-row input, .ingredient-row select { padding:6px 7px; font-size:0.80rem; }
+  .recipe-card-header { padding:11px 12px; }
+  .recipe-card-title { font-size:0.88rem; }
+  .recipe-card-body { padding:8px 12px 12px; }
+  .ing-table { font-size:0.78rem; }
+  .ing-table th { font-size:0.60rem; padding:2px 6px 4px; }
+  .ing-table td { padding:5px 6px; }
+  .instructions-box { font-size:0.79rem; padding:8px 10px; }
+  .badge { font-size:0.58rem; padding:2px 6px; }
 }
 </style>
 </head>
@@ -973,7 +984,7 @@ function renderRecipes() {
             <span class="badge badge-ing">${ings.length} ingredient${ings.length!==1?'s':''}</span>
           </div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
+        <div class="recipe-card-actions">
           <button class="edit-btn" onclick="event.stopPropagation(); window.editRecipe('${r.id}')" title="Edit">✏️</button>
           <button class="del-btn" onclick="event.stopPropagation(); window.deleteRecipe('${r.id}')" title="Delete">🗑</button>
         </div>
