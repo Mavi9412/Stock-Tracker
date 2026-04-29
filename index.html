@@ -185,6 +185,49 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
 @media(max-width:380px){
   .stats-row { grid-template-columns: 1fr; }
 }
+
+/* ── NAV TABS ── */
+.nav-tabs { background:var(--navy-dark); display:flex; gap:4px; padding:0 20px; border-bottom:2px solid rgba(255,255,255,0.08); }
+.nav-tab { background:transparent; border:none; color:rgba(255,255,255,0.5); font-family:'Space Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.8px; padding:11px 16px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.2s; }
+.nav-tab:hover { color:rgba(255,255,255,0.8); }
+.nav-tab.active { color:white; border-bottom-color:var(--accent); }
+
+/* ── RECIPE CARDS ── */
+.recipe-card { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); box-shadow:var(--shadow); margin-bottom:12px; overflow:hidden; }
+.recipe-card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 17px; cursor:pointer; gap:10px; }
+.recipe-card-header:hover { background:var(--gray-50); }
+.recipe-card-title { font-weight:600; font-size:0.95rem; color:var(--gray-800); }
+.recipe-card-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }
+.badge { display:inline-block; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:20px; font-family:'Space Mono',monospace; letter-spacing:0.3px; }
+.badge-cat { background:var(--blue-soft); color:var(--navy); }
+.badge-sub { background:var(--yellow-soft); color:#92600A; }
+.badge-ing { background:var(--green-soft); color:#1a6b3a; }
+.recipe-card-body { padding:0 17px 16px; border-top:1px solid var(--gray-100); display:none; }
+.recipe-card-body.open { display:block; }
+.ing-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:0.84rem; }
+.ing-table th { text-align:left; font-size:0.65rem; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.6px; padding:4px 8px 6px; }
+.ing-table td { padding:5px 8px; border-bottom:1px solid var(--gray-100); }
+.ing-table tr:last-child td { border-bottom:none; }
+.instructions-box { background:var(--gray-50); border-radius:8px; padding:10px 13px; font-size:0.84rem; color:var(--gray-600); white-space:pre-wrap; margin-top:8px; line-height:1.6; }
+.recipe-actions { display:flex; gap:8px; margin-top:12px; }
+
+/* ── INGREDIENT ROW ── */
+.ingredient-row { display:grid; grid-template-columns:1fr 80px 100px 36px; gap:6px; align-items:center; margin-bottom:6px; }
+.ingredient-row input, .ingredient-row select { padding:7px 9px; font-size:0.83rem; }
+.btn-remove-ing { background:none; border:1.5px solid var(--gray-200); border-radius:7px; cursor:pointer; color:var(--gray-400); font-size:0.85rem; padding:5px 8px; transition:all 0.12s; }
+.btn-remove-ing:hover { color:var(--red); border-color:var(--red); background:#fff0ee; }
+.btn-add-ing { background:transparent; border:1.5px dashed var(--gray-400); color:var(--gray-600); border-radius:8px; padding:7px 14px; font-size:0.78rem; cursor:pointer; transition:all 0.15s; width:100%; margin:4px 0 12px; }
+.btn-add-ing:hover { border-color:var(--navy); color:var(--navy); background:var(--blue-soft); }
+textarea.recipe-textarea { width:100%; border:1.5px solid var(--gray-200); border-radius:8px; padding:9px 11px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--gray-800); background:var(--gray-50); outline:none; transition:all 0.2s; resize:vertical; min-height:80px; }
+textarea.recipe-textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px rgba(26,60,94,0.09); background:white; }
+.ing-header-row { display:grid; grid-template-columns:1fr 80px 100px 36px; gap:6px; padding:0 0 4px; }
+.ing-header-row span { font-size:0.65rem; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.5px; }
+
+@media(max-width:600px){
+  .nav-tabs { padding:0 10px; }
+  .nav-tab { padding:10px 12px; font-size:0.66rem; }
+  .ingredient-row { grid-template-columns:1fr 65px 85px 34px; }
+}
 </style>
 </head>
 <body>
@@ -215,8 +258,8 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
     <button id="btnInstallLogin" style="display:none; width:100%; margin-bottom:20px; padding:12px; border-radius:12px; border:2px solid var(--navy); background:white; color:var(--navy); font-weight:700; cursor:pointer; font-family:inherit; font-size:0.9rem;">📲 INSTALL MOBILE APP</button>
 
     <div class="tabs">
-      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Login</button>
-      <button class="tab-btn" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
+      <button class="tab-btn active" id="tabLogin" onclick="switchLoginTab('login')">Login</button>
+      <button class="tab-btn" id="tabSignup" onclick="switchLoginTab('signup')">Sign Up</button>
     </div>
 
     <div id="loginError" class="login-error"></div>
@@ -271,6 +314,12 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
     </div>
   </header>
 
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="navStock" onclick="switchAppTab('stock')">📦 STOCK</button>
+    <button class="nav-tab" id="navRecipes" onclick="switchAppTab('recipes')">🍽️ RECIPES</button>
+  </div>
+
+  <div id="stockContent">
   <main>
     <!-- Stats -->
     <div class="stats-row">
@@ -382,7 +431,87 @@ td.date-cell { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(
   <div style="text-align:center; padding:16px; font-size:0.72rem; color:var(--gray-400); font-family:'Space Mono',monospace; letter-spacing:0.5px;">
     Powered by <span style="color:var(--navy); font-weight:700;">Mavi</span>
   </div>
-</div>
+  </div><!-- /stockContent -->
+
+  <!-- ════════ RECIPES CONTENT ════════ -->
+  <div id="recipesContent" style="display:none">
+  <main>
+
+    <!-- Recipe Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Recipes</div>
+        <div class="stat-value" id="rStatRecipes">0</div>
+        <div class="stat-sub">saved recipes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value" id="rStatCats">0</div>
+        <div class="stat-sub">unique categories</div>
+      </div>
+    </div>
+
+    <!-- Recipe Form -->
+    <div class="form-card" id="recipeFormCard">
+      <div class="form-title" id="recipeFormTitle">🍽️ Add Recipe</div>
+
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="field">
+          <label>Recipe Name</label>
+          <input type="text" id="rName" placeholder="e.g. Margherita Pizza">
+        </div>
+        <div class="field" style="position:relative;">
+          <label>Category</label>
+          <input type="text" id="rCategory" placeholder="e.g. Pizza" autocomplete="off" oninput="filterCatSuggestions()" onfocus="filterCatSuggestions()">
+          <div id="catSuggestionBox" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1.5px solid var(--navy); border-radius:8px; max-height:160px; overflow-y:auto; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,0.12); margin-top:2px;"></div>
+        </div>
+        <div class="field">
+          <label>Sub-Category <span style="color:var(--gray-400);font-weight:400;text-transform:none;">(optional)</span></label>
+          <input type="text" id="rSubCategory" placeholder="e.g. Small / Medium / Large">
+        </div>
+      </div>
+
+      <!-- Ingredients -->
+      <label style="display:block; margin-bottom:8px;">Ingredients</label>
+      <div class="ing-header-row">
+        <span>Item Name</span><span>Qty</span><span>Unit</span><span></span>
+      </div>
+      <div id="ingredientsContainer"></div>
+      <button class="btn-add-ing" onclick="addIngredientRow()">+ Add Ingredient</button>
+
+      <!-- Instructions -->
+      <div class="field" style="margin-bottom:14px;">
+        <label>Instructions <span style="color:var(--gray-400);font-weight:400;text-transform:none;">(optional)</span></label>
+        <textarea class="recipe-textarea" id="rInstructions" placeholder="Step 1: Dough banao...&#10;Step 2: ..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn-add" id="btnSaveRecipe" onclick="saveRecipe()" style="flex:1;">+ SAVE RECIPE</button>
+        <button class="btn-cancel" id="btnCancelRecipe" onclick="cancelRecipeEdit()" style="display:none; flex:1; margin-top:0;">✕ Cancel</button>
+      </div>
+    </div>
+
+    <!-- Recipes List -->
+    <div class="table-card" style="overflow:visible;">
+      <div class="table-header-bar">
+        <div class="table-title">📋 Recipes List</div>
+        <input class="filter-input" type="text" id="recipeFilter" placeholder="🔍 Recipe name..." oninput="renderRecipes()" style="padding:6px 10px; font-size:0.75rem; width:160px;">
+      </div>
+      <div style="padding:12px 14px;" id="recipesListContainer">
+        <div class="empty-state" id="recipeEmptyState">
+          <div class="icon">🍽️</div>
+          <div>Koi recipe nahi. Upar se pehli recipe add karein!</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <div style="text-align:center; padding:16px; font-size:0.72rem; color:var(--gray-400); font-family:'Space Mono',monospace; letter-spacing:0.5px;">
+    Powered by <span style="color:var(--navy); font-weight:700;">Mavi</span>
+  </div>
+  </div><!-- /recipesContent -->
+
+</div><!-- /appScreen -->
 
 <div class="toast" id="toast"></div>
 
@@ -401,9 +530,11 @@ let currentUser = null;
 let records = [];
 let items = {};
 let editingId = null;
+let recipes = [];
+let editingRecipeId = null;
 
 // ── UI HELPERS ───────────────────────────────────────────────────────────────
-function switchTab(t) {
+function switchLoginTab(t) {
   document.getElementById('formLogin').style.display  = t==='login'  ? '' : 'none';
   document.getElementById('formSignup').style.display = t==='signup' ? '' : 'none';
   document.getElementById('tabLogin').classList.toggle('active',  t==='login');
@@ -514,6 +645,7 @@ async function fetchData() {
   updateStats();
   updateChips();
   updateSuggestions();
+  await fetchRecipes();
 }
 
 async function addEntry() {
@@ -656,6 +788,216 @@ function resetForm() {
   document.getElementById('btnAdd').textContent = '+ ADD';
   document.getElementById('btnCancel').style.display = 'none';
   document.getElementById('fItem').focus();
+}
+
+// ── APP TAB SWITCH ───────────────────────────────────────────────────────────
+function switchAppTab(tab) {
+  document.getElementById('stockContent').style.display   = tab === 'stock'   ? '' : 'none';
+  document.getElementById('recipesContent').style.display = tab === 'recipes' ? '' : 'none';
+  document.getElementById('navStock').classList.toggle('active',   tab === 'stock');
+  document.getElementById('navRecipes').classList.toggle('active', tab === 'recipes');
+}
+
+// ── RECIPE DATA ──────────────────────────────────────────────────────────────
+async function fetchRecipes() {
+  const { data, error } = await supabaseClient
+    .from('recipes')
+    .select('*, recipe_ingredients(*)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('Recipes fetch error:', error); return; }
+  recipes = data || [];
+  renderRecipes();
+  updateRecipeStats();
+}
+
+async function saveRecipe() {
+  if (editingRecipeId) { await updateRecipe(); return; }
+  const name = document.getElementById('rName').value.trim();
+  const category = document.getElementById('rCategory').value.trim();
+  const subCat = document.getElementById('rSubCategory').value.trim();
+  const instructions = document.getElementById('rInstructions').value.trim();
+  if (!name) { showToast('⚠️ Recipe ka naam zaroori hai!'); return; }
+
+  const btn = document.getElementById('btnSaveRecipe');
+  btn.disabled = true; btn.textContent = '...SAVING';
+
+  const { data: recipeData, error: recipeErr } = await supabaseClient
+    .from('recipes')
+    .insert([{ user_id: currentUser.id, name, category, sub_category: subCat, instructions: instructions || null }])
+    .select().single();
+
+  if (recipeErr) { showToast('❌ Recipe save nahi hui: ' + recipeErr.message); btn.disabled = false; btn.textContent = '+ SAVE RECIPE'; return; }
+
+  const ings = collectIngredients();
+  if (ings.length) {
+    const rows = ings.map(i => ({ recipe_id: recipeData.id, item_name: i.name, quantity: i.qty, unit: i.unit }));
+    await supabaseClient.from('recipe_ingredients').insert(rows);
+  }
+
+  showToast('✅ Recipe save ho gayi!');
+  btn.disabled = false; btn.textContent = '+ SAVE RECIPE';
+  resetRecipeForm();
+  await fetchRecipes();
+}
+
+async function updateRecipe() {
+  const name = document.getElementById('rName').value.trim();
+  const category = document.getElementById('rCategory').value.trim();
+  const subCat = document.getElementById('rSubCategory').value.trim();
+  const instructions = document.getElementById('rInstructions').value.trim();
+  if (!name) { showToast('⚠️ Recipe ka naam zaroori hai!'); return; }
+
+  const btn = document.getElementById('btnSaveRecipe');
+  btn.disabled = true; btn.textContent = '...UPDATING';
+
+  await supabaseClient.from('recipes')
+    .update({ name, category, sub_category: subCat, instructions: instructions || null })
+    .eq('id', editingRecipeId);
+
+  await supabaseClient.from('recipe_ingredients').delete().eq('recipe_id', editingRecipeId);
+
+  const ings = collectIngredients();
+  if (ings.length) {
+    const rows = ings.map(i => ({ recipe_id: editingRecipeId, item_name: i.name, quantity: i.qty, unit: i.unit }));
+    await supabaseClient.from('recipe_ingredients').insert(rows);
+  }
+
+  showToast('✅ Recipe update ho gayi!');
+  btn.disabled = false; btn.textContent = '+ SAVE RECIPE';
+  cancelRecipeEdit();
+  await fetchRecipes();
+}
+
+function collectIngredients() {
+  const rows = document.querySelectorAll('.ingredient-row');
+  const result = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.ing-name').value.trim();
+    const qty  = parseFloat(row.querySelector('.ing-qty').value) || 0;
+    const unit = row.querySelector('.ing-unit').value;
+    if (name) result.push({ name, qty, unit });
+  });
+  return result;
+}
+
+window.deleteRecipe = async function(id) {
+  if (!confirm('Kya aap yeh recipe delete karna chahte hain?')) return;
+  await supabaseClient.from('recipe_ingredients').delete().eq('recipe_id', id);
+  await supabaseClient.from('recipes').delete().eq('id', id);
+  showToast('🗑 Recipe deleted');
+  await fetchRecipes();
+};
+
+window.editRecipe = function(id) {
+  const r = recipes.find(x => String(x.id) === String(id));
+  if (!r) return;
+  editingRecipeId = id;
+  document.getElementById('rName').value = r.name || '';
+  document.getElementById('rCategory').value = r.category || '';
+  document.getElementById('rSubCategory').value = r.sub_category || '';
+  document.getElementById('rInstructions').value = r.instructions || '';
+
+  document.getElementById('ingredientsContainer').innerHTML = '';
+  (r.recipe_ingredients || []).forEach(i => addIngredientRow(i.item_name, i.quantity, i.unit));
+  if (!(r.recipe_ingredients || []).length) addIngredientRow();
+
+  document.getElementById('btnSaveRecipe').textContent = '✏️ UPDATE RECIPE';
+  document.getElementById('btnCancelRecipe').style.display = 'block';
+  document.getElementById('recipeFormTitle').textContent = '✏️ Edit Recipe';
+  document.getElementById('recipeFormCard').classList.add('editing');
+  document.getElementById('recipeFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+function cancelRecipeEdit() {
+  editingRecipeId = null;
+  resetRecipeForm();
+  document.getElementById('recipeFormCard').classList.remove('editing');
+  document.getElementById('recipeFormTitle').textContent = '🍽️ Add Recipe';
+}
+
+function resetRecipeForm() {
+  document.getElementById('rName').value = '';
+  document.getElementById('rCategory').value = '';
+  document.getElementById('rSubCategory').value = '';
+  document.getElementById('rInstructions').value = '';
+  document.getElementById('ingredientsContainer').innerHTML = '';
+  addIngredientRow();
+  document.getElementById('btnSaveRecipe').textContent = '+ SAVE RECIPE';
+  document.getElementById('btnCancelRecipe').style.display = 'none';
+}
+
+function addIngredientRow(name='', qty='', unit='pcs') {
+  const unitOptions = ['pcs','kg','g','L','mL','dozen','packet','box','bottle','tray','bag','bundle','sack','can','roll'];
+  const opts = unitOptions.map(u => `<option value="${u}"${u===unit?' selected':''}>${u}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.innerHTML = `
+    <input type="text" class="ing-name" placeholder="Item name" value="${name}">
+    <input type="number" class="ing-qty" placeholder="Qty" value="${qty}" min="0" step="any">
+    <select class="ing-unit">${opts}</select>
+    <button class="btn-remove-ing" onclick="this.closest('.ingredient-row').remove()" title="Remove">🗑</button>`;
+  document.getElementById('ingredientsContainer').appendChild(row);
+}
+
+function renderRecipes() {
+  const query = (document.getElementById('recipeFilter')?.value || '').toLowerCase();
+  const container = document.getElementById('recipesListContainer');
+  const empty = document.getElementById('recipeEmptyState');
+  const filtered = recipes.filter(r => r.name.toLowerCase().includes(query) || (r.category||'').toLowerCase().includes(query));
+
+  if (!filtered.length) { empty.style.display = 'block'; container.innerHTML = ''; container.appendChild(empty); return; }
+  empty.style.display = 'none';
+
+  container.innerHTML = filtered.map(r => {
+    const ings = r.recipe_ingredients || [];
+    return `<div class="recipe-card">
+      <div class="recipe-card-header" onclick="toggleRecipeCard('${r.id}')">
+        <div>
+          <div class="recipe-card-title">${r.name}</div>
+          <div class="recipe-card-meta">
+            ${r.category ? `<span class="badge badge-cat">${r.category}</span>` : ''}
+            ${r.sub_category ? `<span class="badge badge-sub">${r.sub_category}</span>` : ''}
+            <span class="badge badge-ing">${ings.length} ingredient${ings.length!==1?'s':''}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="edit-btn" onclick="event.stopPropagation(); window.editRecipe('${r.id}')" title="Edit">✏️</button>
+          <button class="del-btn" onclick="event.stopPropagation(); window.deleteRecipe('${r.id}')" title="Delete">🗑</button>
+        </div>
+      </div>
+      <div class="recipe-card-body" id="rcb-${r.id}">
+        ${ings.length ? `<table class="ing-table">
+          <thead><tr><th>Ingredient</th><th>Qty</th><th>Unit</th></tr></thead>
+          <tbody>${ings.map(i=>`<tr><td>${i.item_name}</td><td>${i.quantity||'—'}</td><td><span class="unit-tag">${i.unit||''}</span></td></tr>`).join('')}</tbody>
+        </table>` : '<p style="color:var(--gray-400);font-size:0.82rem;padding:8px 0;">Koi ingredient nahi.</p>'}
+        ${r.instructions ? `<div style="font-size:0.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.6px;margin-top:8px;">Instructions</div><div class="instructions-box">${r.instructions}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleRecipeCard = function(id) {
+  const body = document.getElementById('rcb-' + id);
+  if (body) body.classList.toggle('open');
+};
+
+function updateRecipeStats() {
+  document.getElementById('rStatRecipes').textContent = recipes.length;
+  const cats = new Set(recipes.map(r => r.category).filter(Boolean));
+  document.getElementById('rStatCats').textContent = cats.size;
+}
+
+function filterCatSuggestions() {
+  const val = document.getElementById('rCategory').value.toLowerCase();
+  const box = document.getElementById('catSuggestionBox');
+  const cats = [...new Set(recipes.map(r => r.category).filter(Boolean))];
+  const matches = cats.filter(c => c.toLowerCase().includes(val));
+  if (!matches.length) { box.style.display = 'none'; return; }
+  box.innerHTML = matches.map(c =>
+    `<div class="suggestion-item" onmousedown="document.getElementById('rCategory').value='${c}'; document.getElementById('catSuggestionBox').style.display='none';">${c}</div>`
+  ).join('');
+  box.style.display = 'block';
 }
 
 window.deleteEntry = deleteEntry;
@@ -926,6 +1268,10 @@ document.addEventListener('keydown', e => {
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+document.getElementById('rCategory').addEventListener('blur', () => {
+  setTimeout(() => { document.getElementById('catSuggestionBox').style.display = 'none'; }, 150);
+});
+addIngredientRow();
 checkUser();
 
 let deferredPrompt;
