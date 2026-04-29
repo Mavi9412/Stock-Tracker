@@ -809,6 +809,7 @@ async function fetchRecipes() {
   recipes = data || [];
   renderRecipes();
   updateRecipeStats();
+  if (!editingRecipeId) populateIngredientsFromStock();
 }
 
 async function saveRecipe() {
@@ -922,9 +923,20 @@ function resetRecipeForm() {
   document.getElementById('rSubCategory').value = '';
   document.getElementById('rInstructions').value = '';
   document.getElementById('ingredientsContainer').innerHTML = '';
-  addIngredientRow();
+  populateIngredientsFromStock();
   document.getElementById('btnSaveRecipe').textContent = '+ SAVE RECIPE';
   document.getElementById('btnCancelRecipe').style.display = 'none';
+}
+
+function populateIngredientsFromStock() {
+  const container = document.getElementById('ingredientsContainer');
+  container.innerHTML = '';
+  const keys = Object.keys(items);
+  if (keys.length) {
+    keys.forEach(k => addIngredientRow(items[k].name, '', items[k].unit));
+  } else {
+    addIngredientRow();
+  }
 }
 
 function addIngredientRow(name='', qty='', unit='pcs') {
@@ -1271,7 +1283,6 @@ document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
 document.getElementById('rCategory').addEventListener('blur', () => {
   setTimeout(() => { document.getElementById('catSuggestionBox').style.display = 'none'; }, 150);
 });
-addIngredientRow();
 checkUser();
 
 let deferredPrompt;
