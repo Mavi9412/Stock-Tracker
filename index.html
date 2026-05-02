@@ -979,9 +979,7 @@ function handleRecipeSearch() {
 function renderRecipes() {
   const query = document.getElementById('recipeFilter')?.value?.trim().toLowerCase() || '';
   const container = document.getElementById('recipesListContainer');
-  const empty = document.getElementById('recipeEmptyState');
-
-  if (!container || !empty) return;
+  if (!container) return;
 
   // Search in name, category, sub-category, and ingredients
   const filtered = recipes.filter(r => {
@@ -1002,11 +1000,12 @@ function renderRecipes() {
   });
 
   if (filtered.length === 0) {
-    container.innerHTML = '';
-    empty.style.display = 'block';
-    container.appendChild(empty);
+    container.innerHTML = `
+      <div class="empty-state" id="recipeEmptyState">
+        <div class="icon">🍽️</div>
+        <div>Koi matching recipe nahi mila.</div>
+      </div>`;
   } else {
-    empty.style.display = 'none';
     container.innerHTML = filtered.map(r => {
       const ings = r.recipe_ingredients || [];
       return `
@@ -1049,6 +1048,8 @@ function renderRecipes() {
     }).join('');
   }
 }
+
+window.handleRecipeSearch = handleRecipeSearch;
 
 
 window.toggleRecipeCard = function(id) {
