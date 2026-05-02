@@ -506,7 +506,7 @@ textarea.recipe-textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px 
     <div class="table-card" style="overflow:visible;">
       <div class="table-header-bar">
         <div class="table-title">📋 Recipes List</div>
-        <input class="filter-input" type="text" id="recipeFilter" placeholder="🔍 Recipe name..." oninput="renderRecipes()" style="padding:6px 10px; font-size:0.75rem; width:160px;">
+        <input class="filter-input" type="text" id="recipeFilter" placeholder="🔍 Recipe name..." oninput="handleRecipeSearch()" style="padding:6px 10px; font-size:0.75rem; width:160px;">
       </div>
       <div style="padding:12px 14px;" id="recipesListContainer">
         <div class="empty-state" id="recipeEmptyState">
@@ -807,6 +807,11 @@ function switchAppTab(tab) {
   document.getElementById('recipesContent').style.display = tab === 'recipes' ? '' : 'none';
   document.getElementById('navStock').classList.toggle('active',   tab === 'stock');
   document.getElementById('navRecipes').classList.toggle('active', tab === 'recipes');
+
+  if (tab === 'recipes') {
+    // Force refresh to ensure search is applied and list is rendered
+    setTimeout(() => renderRecipes(), 50);
+  }
 }
 
 // ── RECIPE DATA ──────────────────────────────────────────────────────────────
@@ -963,9 +968,16 @@ function addIngredientRow(name='', qty='', unit='pcs') {
   document.getElementById('ingredientsContainer').appendChild(row);
 }
 
+let recipeSearchTimeout;
+function handleRecipeSearch() {
+  clearTimeout(recipeSearchTimeout);
+  recipeSearchTimeout = setTimeout(() => {
+    renderRecipes();
+  }, 200);
+}
+
 function renderRecipes() {
-  const filterInput = document.getElementById('recipeFilter');
-  const query = (filterInput ? filterInput.value : '').trim().toLowerCase();
+  const query = document.getElementById('recipeFilter')?.value?.trim().toLowerCase() || '';
   const container = document.getElementById('recipesListContainer');
   const empty = document.getElementById('recipeEmptyState');
 
@@ -990,8 +1002,8 @@ function renderRecipes() {
   });
 
   if (filtered.length === 0) {
-    empty.style.display = 'block';
     container.innerHTML = '';
+    empty.style.display = 'block';
     container.appendChild(empty);
   } else {
     empty.style.display = 'none';
