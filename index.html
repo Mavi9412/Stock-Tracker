@@ -964,14 +964,26 @@ function addIngredientRow(name='', qty='', unit='pcs') {
 }
 
 function renderRecipes() {
-  const query = (document.getElementById('recipeFilter')?.value || '').toLowerCase();
+  // Debug: log current filter query
+  const query = (document.getElementById('recipeFilter')?.value || '').trim().toLowerCase();
+  console.log('Render Recipes - filter query:', query);
   const container = document.getElementById('recipesListContainer');
   const empty = document.getElementById('recipeEmptyState');
-  const filtered = recipes.filter(r => r.name.toLowerCase().includes(query) || (r.category||'').toLowerCase().includes(query));
 
-  if (!filtered.length) { empty.style.display = 'block'; container.innerHTML = ''; container.appendChild(empty); return; }
+  const filtered = recipes.filter(r =>
+    r.name.toLowerCase().includes(query) ||
+    (r.category || '').toLowerCase().includes(query)
+  );
+
+  if (!filtered.length) {
+    empty.style.display = 'block';
+    container.innerHTML = '';
+    container.appendChild(empty);
+    return;
+  }
   empty.style.display = 'none';
 
+  // Render filtered recipes; join strings to set innerHTML correctly
   container.innerHTML = filtered.map(r => {
     const ings = r.recipe_ingredients || [];
     return `<div class="recipe-card">
