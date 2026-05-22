@@ -506,7 +506,11 @@ textarea.recipe-textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px 
     <div class="table-card" style="overflow:visible;">
       <div class="table-header-bar">
         <div class="table-title">📋 Recipes List</div>
-        <input class="filter-input" type="text" id="recipeFilter" placeholder="🔍 Recipe name..." oninput="handleRecipeSearch()" style="padding:6px 10px; font-size:0.75rem; width:160px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;justify-content:flex-end;">
+          <input class="filter-input" type="text" id="recipeFilter" placeholder="🔍 Recipe name..." oninput="handleRecipeSearch()" style="padding:6px 10px; font-size:0.75rem; width:160px;">
+          <button class="btn-sm" onclick="downloadAllRecipes()">⬇ Sab TXT</button>
+          <button class="btn-sm" onclick="printAllRecipesPDF()">📄 Sab PDF</button>
+        </div>
       </div>
       <div style="padding:12px 14px;" id="recipesListContainer">
         <div class="empty-state" id="recipeEmptyState">
@@ -528,6 +532,8 @@ textarea.recipe-textarea:focus { border-color:var(--navy); box-shadow:0 0 0 3px 
 
 <!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- html2pdf CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
@@ -1020,6 +1026,8 @@ function renderRecipes() {
               </div>
             </div>
             <div class="recipe-card-actions">
+              <button class="edit-btn" onclick="event.stopPropagation(); window.downloadRecipe('${r.id}')" title="TXT Download">⬇️</button>
+              <button class="edit-btn" onclick="event.stopPropagation(); window.printRecipePDF('${r.id}')" title="PDF Download">📄</button>
               <button class="edit-btn" onclick="event.stopPropagation(); window.editRecipe('${r.id}')" title="Edit">✏️</button>
               <button class="del-btn" onclick="event.stopPropagation(); window.deleteRecipe('${r.id}')" title="Delete">🗑</button>
             </div>
@@ -1299,6 +1307,152 @@ function formatDate(d){
   const [y,m,day]=d.split('-');
   const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${parseInt(day)}-${mo[parseInt(m)-1]}-${y}`;
+}
+
+function recipeToText(r) {
+  const ings = r.recipe_ingredients || [];
+  let txt = 'RECIPE: ' + r.name + '\n';
+  txt += '========================================\n';
+  if (r.category)     txt += 'Category    : ' + r.category + '\n';
+  if (r.sub_category) txt += 'Sub-Category: ' + r.sub_category + '\n';
+  txt += '\n';
+  if (ings.length) {
+    txt += 'INGREDIENTS:\n';
+    txt += '----------------------------------------\n';
+    ings.forEach(i => {
+      const qty = i.quantity ? (i.quantity + ' ' + (i.unit || '')) : (i.unit || '');
+      txt += '  - ' + i.item_name + '  :  ' + qty + '\n';
+    });
+    txt += '\n';
+  }
+  if (r.instructions) {
+    txt += 'INSTRUCTIONS:\n';
+    txt += '----------------------------------------\n';
+    txt += r.instructions + '\n';
+  }
+  txt += '\n________________________________________\n';
+  txt += 'Stock-Tracker  |  Powered by Mavi\n';
+  return txt;
+}
+
+window.downloadRecipe = function(id) {
+  const r = recipes.find(x => String(x.id) === String(id));
+  if (!r) return;
+  const bom = '﻿';
+  const content = bom + recipeToText(r);
+  const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'recipe_' + safeName + '.txt';
+  a.click();
+  showToast('📥 TXT download ho gaya!');
+};
+
+function buildRecipeElement(recipeList, title) {
+  const userName = currentUser.user_metadata.full_name || currentUser.email;
+  const today = new Date().toLocaleDateString('en-PK', { year:'numeric', month:'long', day:'numeric' });
+
+  const cards = recipeList.map((r, idx) => {
+    const ings = r.recipe_ingredients || [];
+    const ingRows = ings.map(i =>
+      `<tr>
+        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.item_name || ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.quantity || ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.unit || ''}</td>
+      </tr>`
+    ).join('');
+
+    return `
+      <div style="margin-bottom:18px;${idx > 0 ? 'page-break-inside:avoid;' : ''}">
+        <h2 style="font-size:1.1rem;color:#1A3C5E;margin-bottom:7px;">${r.name}</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          ${r.category    ? `<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#D6EAF8;color:#1A3C5E;">${r.category}</span>` : ''}
+          ${r.sub_category ? `<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF9E7;color:#92600A;">${r.sub_category}</span>` : ''}
+          <span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#D5F5E3;color:#1a6b3a;">${ings.length} ingredients</span>
+        </div>
+        ${ings.length ? `
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#475569;margin-bottom:5px;">Ingredients</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:10px;">
+            <thead><tr style="background:#1A3C5E;">
+              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Item</th>
+              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Qty</th>
+              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Unit</th>
+            </tr></thead>
+            <tbody>${ingRows}</tbody>
+          </table>` : ''}
+        ${r.instructions ? `
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#475569;margin-bottom:5px;">Instructions</div>
+          <div style="background:#F8FAFC;border-radius:6px;padding:10px 13px;font-size:0.83rem;color:#475569;line-height:1.65;border-left:3px solid #1A3C5E;white-space:pre-wrap;word-break:break-word;">${r.instructions}</div>` : ''}
+      </div>
+      ${idx < recipeList.length - 1 ? '<hr style="border:none;border-top:1px dashed #CBD5E1;margin:14px 0;">' : ''}`;
+  }).join('');
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'font-family:Segoe UI,Arial,sans-serif;padding:28px;max-width:680px;color:#1E293B;background:white;';
+  wrapper.innerHTML = `
+    <div style="text-align:center;margin-bottom:22px;padding-bottom:14px;border-bottom:3px solid #1A3C5E;">
+      <div style="font-size:1.4rem;font-weight:700;color:#1A3C5E;letter-spacing:2px;margin-bottom:4px;">📦 STOCK-TRACKER</div>
+      <div style="font-size:0.78rem;color:#64748B;">${title} &nbsp;|&nbsp; ${userName} &nbsp;|&nbsp; ${today}</div>
+    </div>
+    ${cards}
+    <div style="text-align:center;margin-top:28px;padding-top:12px;border-top:2px solid #1A3C5E;font-size:0.72rem;color:#94A3B8;">
+      <strong style="color:#1A3C5E;">Stock-Tracker</strong> &nbsp;|&nbsp; Powered by <strong style="color:#1A3C5E;">Mavi</strong>
+    </div>`;
+  return wrapper;
+}
+
+function downloadPDF(el, filename) {
+  document.body.appendChild(el);
+  html2pdf().set({
+    margin: 8,
+    filename: filename,
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(el).save().then(() => {
+    document.body.removeChild(el);
+    showToast('📥 PDF download ho gayi!');
+  });
+}
+
+window.printRecipePDF = function(id) {
+  const r = recipes.find(x => String(x.id) === String(id));
+  if (!r) return;
+  showToast('⏳ PDF ban rahi hai...');
+  const el = buildRecipeElement([r], r.name);
+  const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  downloadPDF(el, 'recipe_' + safeName + '.pdf');
+};
+
+function printAllRecipesPDF() {
+  if (!recipes.length) { showToast('Koi recipe nahi!'); return; }
+  showToast('⏳ PDF ban rahi hai...');
+  const el = buildRecipeElement(recipes, 'All Recipes (' + recipes.length + ')');
+  const safeName = (currentUser.user_metadata.full_name || 'user').replace(/\s+/g, '_');
+  downloadPDF(el, 'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.pdf');
+}
+
+function downloadAllRecipes() {
+  if (!recipes.length) { showToast('Koi recipe nahi!'); return; }
+  const userName = currentUser.user_metadata.full_name || 'user';
+  const today = new Date().toLocaleDateString('en-PK');
+  const bom = '﻿';
+  let content = 'STOCK-TRACKER — ALL RECIPES\n';
+  content += '========================================\n';
+  content += 'User    : ' + userName + '\n';
+  content += 'Total   : ' + recipes.length + ' recipes\n';
+  content += 'Date    : ' + today + '\n';
+  content += '========================================\n\n';
+  recipes.forEach((r, i) => {
+    content += '[' + (i + 1) + '] ';
+    content += recipeToText(r);
+    content += '\n\n';
+  });
+  const safeName = userName.replace(/\s+/g, '_');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bom + content], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.txt';
+  a.click();
+  showToast('📥 ' + recipes.length + ' recipes TXT download ho gayi!');
 }
 
 function exportCSV() {
