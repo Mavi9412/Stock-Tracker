@@ -1403,89 +1403,79 @@ window.downloadRecipe = function(id) {
 
 // ── PDF GENERATION ────────────────────────────────────────────────────────────
 
-function buildPDFElement(recipeList, title) {
+function openPrintWindow(recipeList, title) {
   const userName = currentUser.user_metadata.full_name || currentUser.email;
   const today = new Date().toLocaleDateString('en-PK', { year:'numeric', month:'long', day:'numeric' });
 
   const cards = recipeList.map((r, idx) => {
     const ings = r.recipe_ingredients || [];
     const ingRows = ings.map(i =>
-      `<tr>
-        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.item_name || ''}</td>
-        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.quantity || ''}</td>
-        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.unit || ''}</td>
-      </tr>`
+      `<tr><td>${i.item_name || ''}</td><td>${i.quantity || ''}</td><td>${i.unit || ''}</td></tr>`
     ).join('');
     return `
-      <div style="margin-bottom:14px;">
-        <div style="font-size:14px;font-weight:700;color:#1A3C5E;margin-bottom:6px;">${r.name}</div>
-        <div style="margin-bottom:8px;">
-          ${r.category    ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#D6EAF8;color:#1A3C5E;margin-right:4px;">${r.category}</span>` : ''}
-          ${r.sub_category ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#FEF9E7;color:#92600A;margin-right:4px;">${r.sub_category}</span>` : ''}
-          <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#D5F5E3;color:#1a6b3a;">${ings.length} ingredients</span>
+      <div class="recipe-block">
+        <h2>${r.name}</h2>
+        <div class="badges">
+          ${r.category     ? `<span class="b-cat">${r.category}</span>` : ''}
+          ${r.sub_category ? `<span class="b-sub">${r.sub_category}</span>` : ''}
+          <span class="b-ing">${ings.length} ingredients</span>
         </div>
         ${ings.length ? `
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin-bottom:4px;">Ingredients</div>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
-            <thead><tr style="background:#1A3C5E;">
-              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Item</th>
-              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Qty</th>
-              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Unit</th>
-            </tr></thead>
-            <tbody>${ingRows}</tbody>
-          </table>` : ''}
+          <p class="lbl">Ingredients</p>
+          <table><thead><tr><th>Item</th><th>Qty</th><th>Unit</th></tr></thead>
+          <tbody>${ingRows}</tbody></table>` : ''}
         ${r.instructions ? `
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin-bottom:4px;">Instructions</div>
-          <div style="background:#F8FAFC;border-left:3px solid #1A3C5E;padding:8px 10px;font-size:11px;color:#475569;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${r.instructions}</div>` : ''}
+          <p class="lbl">Instructions</p>
+          <div class="instr">${r.instructions.replace(/\n/g,'<br>')}</div>` : ''}
       </div>
-      ${idx < recipeList.length - 1 ? '<div style="border-top:1px dashed #CBD5E1;margin:12px 0;"></div>' : ''}`;
+      ${idx < recipeList.length - 1 ? '<hr>' : ''}`;
   }).join('');
 
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:680px;font-family:Arial,sans-serif;padding:24px;background:white;color:#1E293B;';
-  wrapper.innerHTML = `
-    <div style="text-align:center;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid #1A3C5E;">
-      <div style="font-size:18px;font-weight:700;color:#1A3C5E;letter-spacing:2px;margin-bottom:3px;">STOCK-TRACKER</div>
-      <div style="font-size:10px;color:#64748B;">${title} | ${userName} | ${today}</div>
-    </div>
-    ${cards}
-    <div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px solid #1A3C5E;font-size:9px;color:#94A3B8;">
-      <strong style="color:#1A3C5E;">Stock-Tracker</strong> | Powered by <strong style="color:#1A3C5E;">Mavi</strong>
-    </div>`;
-  return wrapper;
-}
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Calibri,Arial,sans-serif;color:#1E293B;padding:30px;max-width:700px;margin:0 auto;}
+  .header{text-align:center;border-bottom:3px solid #1A3C5E;padding-bottom:12px;margin-bottom:20px;}
+  .header h1{font-size:20pt;color:#1A3C5E;letter-spacing:2px;margin-bottom:3px;}
+  .header p{font-size:9pt;color:#64748B;}
+  .recipe-block{margin-bottom:16px;}
+  h2{font-size:14pt;color:#1A3C5E;margin-bottom:6px;}
+  .badges{margin-bottom:8px;}
+  .b-cat,.b-sub,.b-ing{font-size:8pt;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:4px;display:inline-block;}
+  .b-cat{background:#D6EAF8;color:#1A3C5E;}
+  .b-sub{background:#FEF9E7;color:#92600A;}
+  .b-ing{background:#D5F5E3;color:#1a6b3a;}
+  .lbl{font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#475569;margin:10px 0 4px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  thead tr{background:#1A3C5E;}
+  th{color:white;padding:5px 9px;text-align:left;font-size:9pt;}
+  td{padding:5px 9px;border-bottom:1px solid #E2E8F0;font-size:10pt;}
+  .instr{background:#F8FAFC;border-left:4px solid #1A3C5E;padding:9px 12px;font-size:10pt;color:#475569;line-height:1.65;white-space:pre-wrap;word-break:break-word;}
+  hr{border:none;border-top:1px dashed #CBD5E1;margin:14px 0;}
+  .footer{text-align:center;border-top:2px solid #1A3C5E;padding-top:10px;margin-top:24px;font-size:8pt;color:#94A3B8;}
+  .footer strong{color:#1A3C5E;}
+  @media print{body{padding:10px;} @page{margin:12mm;}}
+</style></head><body>
+  <div class="header"><h1>STOCK-TRACKER</h1><p>${title} | ${userName} | ${today}</p></div>
+  ${cards}
+  <div class="footer"><strong>Stock-Tracker</strong> | Powered by <strong>Mavi</strong></div>
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
 
-function downloadPDF(el, filename) {
-  document.body.appendChild(el);
-  html2pdf().set({
-    margin: [8, 8, 8, 8],
-    filename: filename,
-    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save().then(() => {
-    document.body.removeChild(el);
-    showToast('📥 PDF download ho gayi!');
-  }).catch(() => {
-    document.body.removeChild(el);
-    showToast('❌ PDF mein masla hua, dobara try karein');
-  });
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
 }
 
 window.printRecipePDF = function(id) {
   const r = recipes.find(x => String(x.id) === String(id));
   if (!r) return;
-  showToast('⏳ PDF ban rahi hai...');
-  const el = buildPDFElement([r], r.name);
-  const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-  downloadPDF(el, 'recipe_' + safeName + '.pdf');
+  openPrintWindow([r], r.name);
 };
 
 function printAllRecipesPDF() {
   if (!recipes.length) { showToast('Koi recipe nahi!'); return; }
-  showToast('⏳ PDF ban rahi hai...');
-  const el = buildPDFElement(recipes, 'All Recipes (' + recipes.length + ')');
-  const safeName = (currentUser.user_metadata.full_name || 'user').replace(/\s+/g, '_');
-  downloadPDF(el, 'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.pdf');
+  openPrintWindow(recipes, 'All Recipes (' + recipes.length + ')');
 }
 
 function downloadAllRecipes() {
