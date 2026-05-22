@@ -1309,46 +1309,9 @@ function formatDate(d){
   return `${parseInt(day)}-${mo[parseInt(m)-1]}-${y}`;
 }
 
-function recipeToText(r) {
-  const ings = r.recipe_ingredients || [];
-  let txt = 'RECIPE: ' + r.name + '\n';
-  txt += '========================================\n';
-  if (r.category)     txt += 'Category    : ' + r.category + '\n';
-  if (r.sub_category) txt += 'Sub-Category: ' + r.sub_category + '\n';
-  txt += '\n';
-  if (ings.length) {
-    txt += 'INGREDIENTS:\n';
-    txt += '----------------------------------------\n';
-    ings.forEach(i => {
-      const qty = i.quantity ? (i.quantity + ' ' + (i.unit || '')) : (i.unit || '');
-      txt += '  - ' + i.item_name + '  :  ' + qty + '\n';
-    });
-    txt += '\n';
-  }
-  if (r.instructions) {
-    txt += 'INSTRUCTIONS:\n';
-    txt += '----------------------------------------\n';
-    txt += r.instructions + '\n';
-  }
-  txt += '\n________________________________________\n';
-  txt += 'Stock-Tracker  |  Powered by Mavi\n';
-  return txt;
-}
+// ── RECIPE DOC/PDF HELPERS ───────────────────────────────────────────────────
 
-window.downloadRecipe = function(id) {
-  const r = recipes.find(x => String(x.id) === String(id));
-  if (!r) return;
-  const bom = '﻿';
-  const content = bom + recipeToText(r);
-  const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
-  a.download = 'recipe_' + safeName + '.txt';
-  a.click();
-  showToast('📥 TXT download ho gaya!');
-};
-
-function buildRecipeElement(recipeList, title) {
+function buildRecipeDocHTML(recipeList, title) {
   const userName = currentUser.user_metadata.full_name || currentUser.email;
   const today = new Date().toLocaleDateString('en-PK', { year:'numeric', month:'long', day:'numeric' });
 
@@ -1356,47 +1319,138 @@ function buildRecipeElement(recipeList, title) {
     const ings = r.recipe_ingredients || [];
     const ingRows = ings.map(i =>
       `<tr>
-        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.item_name || ''}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.quantity || ''}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #E2E8F0;">${i.unit || ''}</td>
+        <td>${i.item_name || ''}</td>
+        <td>${i.quantity || ''}</td>
+        <td>${i.unit || ''}</td>
       </tr>`
     ).join('');
-
     return `
-      <div style="margin-bottom:18px;${idx > 0 ? 'page-break-inside:avoid;' : ''}">
-        <h2 style="font-size:1.1rem;color:#1A3C5E;margin-bottom:7px;">${r.name}</h2>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-          ${r.category    ? `<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#D6EAF8;color:#1A3C5E;">${r.category}</span>` : ''}
-          ${r.sub_category ? `<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF9E7;color:#92600A;">${r.sub_category}</span>` : ''}
-          <span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#D5F5E3;color:#1a6b3a;">${ings.length} ingredients</span>
+      ${idx > 0 ? '<div style="page-break-before:always;"></div>' : ''}
+      <h2 class="rname">${r.name}</h2>
+      <p class="meta">
+        ${r.category     ? `<span class="badge-cat">${r.category}</span>` : ''}
+        ${r.sub_category ? `<span class="badge-sub">${r.sub_category}</span>` : ''}
+        <span class="badge-ing">${ings.length} ingredients</span>
+      </p>
+      ${ings.length ? `
+        <p class="section-title">Ingredients</p>
+        <table>
+          <thead><tr><th>Item</th><th>Qty</th><th>Unit</th></tr></thead>
+          <tbody>${ingRows}</tbody>
+        </table>` : ''}
+      ${r.instructions ? `
+        <p class="section-title">Instructions</p>
+        <div class="instr">${r.instructions.replace(/\n/g,'<br>')}</div>` : ''}
+      ${idx < recipeList.length - 1 ? '<hr class="divider">' : ''}`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; margin: 40px; color: #1E293B; }
+  .doc-header { text-align: center; border-bottom: 3px solid #1A3C5E; padding-bottom: 14px; margin-bottom: 24px; }
+  .doc-header h1 { font-size: 20pt; color: #1A3C5E; letter-spacing: 2px; margin: 0 0 4px; }
+  .doc-header p  { font-size: 9pt; color: #64748B; margin: 0; }
+  .rname { font-size: 14pt; color: #1A3C5E; margin: 16px 0 6px; }
+  .meta  { margin: 0 0 10px; }
+  .badge-cat { background: #D6EAF8; color: #1A3C5E; font-size: 8pt; font-weight: bold; padding: 2px 8px; border-radius: 10px; }
+  .badge-sub { background: #FEF9E7; color: #92600A; font-size: 8pt; font-weight: bold; padding: 2px 8px; border-radius: 10px; }
+  .badge-ing { background: #D5F5E3; color: #1a6b3a; font-size: 8pt; font-weight: bold; padding: 2px 8px; border-radius: 10px; }
+  .section-title { font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin: 10px 0 4px; }
+  table  { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 10px; }
+  thead tr { background: #1A3C5E; }
+  th { color: white; padding: 6px 10px; text-align: left; font-size: 9pt; }
+  td { padding: 6px 10px; border-bottom: 1px solid #E2E8F0; }
+  .instr { background: #F8FAFC; border-left: 4px solid #1A3C5E; padding: 10px 14px; font-size: 10pt; color: #475569; line-height: 1.7; margin-bottom: 10px; }
+  .divider { border: none; border-top: 1px dashed #CBD5E1; margin: 18px 0; }
+  .doc-footer { text-align: center; border-top: 2px solid #1A3C5E; padding-top: 12px; margin-top: 30px; font-size: 9pt; color: #94A3B8; }
+  .doc-footer strong { color: #1A3C5E; }
+</style>
+</head>
+<body>
+  <div class="doc-header">
+    <h1>STOCK-TRACKER</h1>
+    <p>${title} &nbsp;|&nbsp; ${userName} &nbsp;|&nbsp; ${today}</p>
+  </div>
+  ${cards}
+  <div class="doc-footer">
+    <strong>Stock-Tracker</strong> &nbsp;|&nbsp; Powered by <strong>Mavi</strong>
+  </div>
+</body>
+</html>`;
+}
+
+function downloadDOC(html, filename) {
+  const blob = new Blob(['﻿' + html], { type: 'application/msword;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast('📥 DOC download ho gayi!');
+}
+
+window.downloadRecipe = function(id) {
+  const r = recipes.find(x => String(x.id) === String(id));
+  if (!r) return;
+  const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  downloadDOC(buildRecipeDocHTML([r], r.name), 'recipe_' + safeName + '.doc');
+};
+
+// ── PDF GENERATION ────────────────────────────────────────────────────────────
+
+function buildPDFElement(recipeList, title) {
+  const userName = currentUser.user_metadata.full_name || currentUser.email;
+  const today = new Date().toLocaleDateString('en-PK', { year:'numeric', month:'long', day:'numeric' });
+
+  const cards = recipeList.map((r, idx) => {
+    const ings = r.recipe_ingredients || [];
+    const ingRows = ings.map(i =>
+      `<tr>
+        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.item_name || ''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.quantity || ''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E2E8F0;font-size:11px;">${i.unit || ''}</td>
+      </tr>`
+    ).join('');
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:14px;font-weight:700;color:#1A3C5E;margin-bottom:6px;">${r.name}</div>
+        <div style="margin-bottom:8px;">
+          ${r.category    ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#D6EAF8;color:#1A3C5E;margin-right:4px;">${r.category}</span>` : ''}
+          ${r.sub_category ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#FEF9E7;color:#92600A;margin-right:4px;">${r.sub_category}</span>` : ''}
+          <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#D5F5E3;color:#1a6b3a;">${ings.length} ingredients</span>
         </div>
         ${ings.length ? `
-          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#475569;margin-bottom:5px;">Ingredients</div>
-          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:10px;">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin-bottom:4px;">Ingredients</div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
             <thead><tr style="background:#1A3C5E;">
-              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Item</th>
-              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Qty</th>
-              <th style="color:white;padding:6px 10px;text-align:left;font-size:0.72rem;">Unit</th>
+              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Item</th>
+              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Qty</th>
+              <th style="color:white;padding:5px 8px;text-align:left;font-size:9px;">Unit</th>
             </tr></thead>
             <tbody>${ingRows}</tbody>
           </table>` : ''}
         ${r.instructions ? `
-          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#475569;margin-bottom:5px;">Instructions</div>
-          <div style="background:#F8FAFC;border-radius:6px;padding:10px 13px;font-size:0.83rem;color:#475569;line-height:1.65;border-left:3px solid #1A3C5E;white-space:pre-wrap;word-break:break-word;">${r.instructions}</div>` : ''}
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin-bottom:4px;">Instructions</div>
+          <div style="background:#F8FAFC;border-left:3px solid #1A3C5E;padding:8px 10px;font-size:11px;color:#475569;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${r.instructions}</div>` : ''}
       </div>
-      ${idx < recipeList.length - 1 ? '<hr style="border:none;border-top:1px dashed #CBD5E1;margin:14px 0;">' : ''}`;
+      ${idx < recipeList.length - 1 ? '<div style="border-top:1px dashed #CBD5E1;margin:12px 0;"></div>' : ''}`;
   }).join('');
 
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'font-family:Segoe UI,Arial,sans-serif;padding:28px;max-width:680px;color:#1E293B;background:white;';
+  wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:680px;font-family:Arial,sans-serif;padding:24px;background:white;color:#1E293B;';
   wrapper.innerHTML = `
-    <div style="text-align:center;margin-bottom:22px;padding-bottom:14px;border-bottom:3px solid #1A3C5E;">
-      <div style="font-size:1.4rem;font-weight:700;color:#1A3C5E;letter-spacing:2px;margin-bottom:4px;">📦 STOCK-TRACKER</div>
-      <div style="font-size:0.78rem;color:#64748B;">${title} &nbsp;|&nbsp; ${userName} &nbsp;|&nbsp; ${today}</div>
+    <div style="text-align:center;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid #1A3C5E;">
+      <div style="font-size:18px;font-weight:700;color:#1A3C5E;letter-spacing:2px;margin-bottom:3px;">STOCK-TRACKER</div>
+      <div style="font-size:10px;color:#64748B;">${title} | ${userName} | ${today}</div>
     </div>
     ${cards}
-    <div style="text-align:center;margin-top:28px;padding-top:12px;border-top:2px solid #1A3C5E;font-size:0.72rem;color:#94A3B8;">
-      <strong style="color:#1A3C5E;">Stock-Tracker</strong> &nbsp;|&nbsp; Powered by <strong style="color:#1A3C5E;">Mavi</strong>
+    <div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px solid #1A3C5E;font-size:9px;color:#94A3B8;">
+      <strong style="color:#1A3C5E;">Stock-Tracker</strong> | Powered by <strong style="color:#1A3C5E;">Mavi</strong>
     </div>`;
   return wrapper;
 }
@@ -1404,13 +1458,16 @@ function buildRecipeElement(recipeList, title) {
 function downloadPDF(el, filename) {
   document.body.appendChild(el);
   html2pdf().set({
-    margin: 8,
+    margin: [8, 8, 8, 8],
     filename: filename,
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   }).from(el).save().then(() => {
     document.body.removeChild(el);
     showToast('📥 PDF download ho gayi!');
+  }).catch(() => {
+    document.body.removeChild(el);
+    showToast('❌ PDF mein masla hua, dobara try karein');
   });
 }
 
@@ -1418,7 +1475,7 @@ window.printRecipePDF = function(id) {
   const r = recipes.find(x => String(x.id) === String(id));
   if (!r) return;
   showToast('⏳ PDF ban rahi hai...');
-  const el = buildRecipeElement([r], r.name);
+  const el = buildPDFElement([r], r.name);
   const safeName = (r.name || 'recipe').replace(/[^a-z0-9]/gi, '_').toLowerCase();
   downloadPDF(el, 'recipe_' + safeName + '.pdf');
 };
@@ -1426,33 +1483,18 @@ window.printRecipePDF = function(id) {
 function printAllRecipesPDF() {
   if (!recipes.length) { showToast('Koi recipe nahi!'); return; }
   showToast('⏳ PDF ban rahi hai...');
-  const el = buildRecipeElement(recipes, 'All Recipes (' + recipes.length + ')');
+  const el = buildPDFElement(recipes, 'All Recipes (' + recipes.length + ')');
   const safeName = (currentUser.user_metadata.full_name || 'user').replace(/\s+/g, '_');
   downloadPDF(el, 'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.pdf');
 }
 
 function downloadAllRecipes() {
   if (!recipes.length) { showToast('Koi recipe nahi!'); return; }
-  const userName = currentUser.user_metadata.full_name || 'user';
-  const today = new Date().toLocaleDateString('en-PK');
-  const bom = '﻿';
-  let content = 'STOCK-TRACKER — ALL RECIPES\n';
-  content += '========================================\n';
-  content += 'User    : ' + userName + '\n';
-  content += 'Total   : ' + recipes.length + ' recipes\n';
-  content += 'Date    : ' + today + '\n';
-  content += '========================================\n\n';
-  recipes.forEach((r, i) => {
-    content += '[' + (i + 1) + '] ';
-    content += recipeToText(r);
-    content += '\n\n';
-  });
-  const safeName = userName.replace(/\s+/g, '_');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([bom + content], { type: 'text/plain;charset=utf-8' }));
-  a.download = 'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.txt';
-  a.click();
-  showToast('📥 ' + recipes.length + ' recipes TXT download ho gayi!');
+  const safeName = (currentUser.user_metadata.full_name || 'user').replace(/\s+/g, '_');
+  downloadDOC(
+    buildRecipeDocHTML(recipes, 'All Recipes (' + recipes.length + ')'),
+    'all_recipes_' + safeName + '_' + new Date().toISOString().split('T')[0] + '.doc'
+  );
 }
 
 function exportCSV() {
