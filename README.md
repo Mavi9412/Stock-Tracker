@@ -8,7 +8,7 @@ A single-page stock and recipe management app built with plain HTML/CSS/JS and S
 - Stock filters (today/week/month/custom), search, edit, and delete
 - CSV export for stock records
 - Recipe management with ingredients, categories, and instructions
-- Recipe DOC/PDF export
+- Recipe export: Word (.doc) and print-friendly PDF
 - PWA support (install button + service worker)
 
 ## Tech Stack
